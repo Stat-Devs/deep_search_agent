@@ -34,12 +34,5 @@ base_agent: Agent = Agent(
     tools=[get_weather]
 )
 
-new_agent: Agent = Agent(
-    name="WeatherAgent",
-    instructions="You are a helpful assistant.",
-    model=llm_model,
-    tools=[get_weather]
-)
-
-res = Runner.run_sync(base_agent, "What's the weather in Karachi?")
+res = Runner.run_sync(base_agent, "What's the weather in Barcelona?")
 print(res)
