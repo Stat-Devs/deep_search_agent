@@ -1,25 +1,25 @@
-# 🚀 Deep Research System - Lead Intelligence Platform
+# Deep Research System - Lead Intelligence Platform
 
 A comprehensive agentic AI system for deep lead research and personalized outreach in the data analytics services space. **Successfully tested with real leads** including executives and technical professionals.
 
-## 🏗️ System Architecture
+## System Architecture
 
 The system consists of **two versions** - a standard sequential system and an advanced handoff-enabled system:
 
-### **🔄 Standard System (Sequential Processing)**
+### **Standard System (Sequential Processing)**
 - **Lead Research Coordinator** - Main orchestrator
 - **Website Research Agent** - Company website analysis
 - **LinkedIn Research Agent** - Professional profile analysis  
 - **Email Generation Agent** - Personalized pitch creation
 
-### **🚀 Handoff-Enabled System (Collaborative AI Team)**
+### **Handoff-Enabled System (Collaborative AI Team)**
 - **Intelligent Coordinator** - Makes handoff decisions
 - **Executive Specialist** - Handles C-suite and high-level contacts
 - **Technical Specialist** - Manages technical contacts and engineers
 - **Context Preservation** - Maintains information between agents
 - **Dynamic Routing** - Adapts strategy based on lead characteristics
 
-## 📊 **High-Level System Architecture Diagram**
+## **High-Level System Architecture Diagram**
 
 ```
 ┌─────────────────────────────────────────────────────────────────────────────────────┐
@@ -128,7 +128,7 @@ The system consists of **two versions** - a standard sequential system and an ad
                        └──────────────────┘    └──────────────────┘    └─────────────────┘
 ```
 
-## 🎯 **Agent Interaction Flow**
+## **Agent Interaction Flow**
 
 ```
                     ┌─────────────────────────────────────────────────────────────┐
@@ -249,7 +249,7 @@ The system consists of **two versions** - a standard sequential system and an ad
 - Focuses on integration with existing tools and systems
 - Provides technical ROI and implementation timelines
 
-## 🚀 **How to Set Up and Run Your System**
+## **How to Set Up and Run Your System**
 
 ### **Prerequisites**
 - **Python 3.9+** installed on your system
@@ -321,7 +321,7 @@ uv run test_christian_lead.py
 # Adjust research parameters and timeouts
 ```
 
-## 🤝 **How the Team Coordinates**
+## **How the Team Coordinates**
 
 ### **Team Coordination Overview**
 Your Deep Research System operates as a **collaborative AI team** where agents work together, share information, and hand off work intelligently. This creates a workflow that mimics how human sales and research teams collaborate.
@@ -370,7 +370,7 @@ Lead Input → Coordinator Agent → Handoff Decision → Specialized Agent → 
 - **Context Preservation**: Ensures no information is lost between transitions
 - **Quality Control**: Each agent validates and enhances previous findings
 
-## 🚀 **Handoff System - Collaborative AI Team**
+## **Handoff System - Collaborative AI Team**
 
 ### **What Are Handoffs?**
 Handoffs enable your AI agents to **collaborate as a team** rather than working in isolation. The system intelligently routes leads to specialized agents based on contact characteristics, creating a **collaborative AI workflow** that mimics human team collaboration.
@@ -383,16 +383,16 @@ Handoffs enable your AI agents to **collaborate as a team** rather than working 
 5. **Collaborative Output** generates comprehensive, context-aware reports
 
 ### **Agent Specializations**
-- **🤖 Executive Specialist**: C-suite, Directors, VPs - Strategic, ROI-focused approach
+- **Executive Specialist**: C-suite, Directors, VPs - Strategic, ROI-focused approach
 - **⚡ Technical Specialist**: Engineers, Analysts, Scientists - Technical integration focus
-- **📊 General Coordinator**: Standard contacts - Professional, value-focused approach
+- **General Coordinator**: Standard contacts - Professional, value-focused approach
 
 ### **Handoff Benefits**
-- **🎯 Intelligent Routing**: Automatically detects contact type and level
-- **🤝 Agent Collaboration**: Agents work together, building on each other's findings
-- **⚡ Specialized Processing**: Tailored approach for each contact type
-- **📈 Improved Quality**: Higher-quality, more targeted communications
-- **🔄 Dynamic Workflows**: System adapts based on research findings
+- **Intelligent Routing**: Automatically detects contact type and level
+- **Agent Collaboration**: Agents work together, building on each other's findings
+- **Specialized Processing**: Tailored approach for each contact type
+- **Improved Quality**: Higher-quality, more targeted communications
+- **Dynamic Workflows**: System adapts based on research findings
 
 ### **System Architecture**
 ```
@@ -485,7 +485,7 @@ if context.person_role == "CTO":
 
 ### **Real-World Handoff Example**
 ```
-🎯 Lead: Sarah Chen, CTO at InnovateTech Solutions
+Lead: Sarah Chen, CTO at InnovateTech Solutions
 🔄 Handoff Process:
 1. Coordinator Agent: Researches company and contact
 2. Handoff Decision: "Technical contact detected - requires technical specialist"
@@ -611,7 +611,7 @@ email_pitch = generate_email_pitch("John Smith", "TechCorp Inc.", "Data Analyst"
                                   website_research, linkedin_research)
 ```
 
-## 🔧 System Features
+## System Features
 
 ### **Intelligent Research Coordination**
 - **Automated workflow** from lead identification to email generation
@@ -640,7 +640,7 @@ email_pitch = generate_email_pitch("John Smith", "TechCorp Inc.", "Data Analyst"
 - **Compelling calls-to-action**
 - **Executive-level communication** for C-suite contacts
 
-## 📊 Real-World Examples
+## Real-World Examples
 
 ### **Example 1: TechCorp Inc. (Technical Contact)**
 - **Contact**: John Smith, Data Analyst
@@ -663,7 +663,7 @@ email_pitch = generate_email_pitch("John Smith", "TechCorp Inc.", "Data Analyst"
 - **Opportunity**: Enhanced data analytics for ecological projects
 - **Approach**: Bilingual consideration, technical integration
 
-## 📈 Lead Scoring & Prioritization
+## Lead Scoring & Prioritization
 
 ### **High-Priority Leads (⭐⭐⭐⭐⭐)**
 - **C-Suite Executives**: CEO, CTO, CFO
@@ -681,7 +681,7 @@ email_pitch = generate_email_pitch("John Smith", "TechCorp Inc.", "Data Analyst"
 - **Non-technical Roles**: Administrative, support staff
 - **Declining Companies**: Businesses with limited growth potential
 
-## 🛠️ Technical Requirements
+## Technical Requirements
 
 - **Python**: 3.9+
 - **Dependencies**: See `pyproject.toml`
@@ -689,7 +689,7 @@ email_pitch = generate_email_pitch("John Smith", "TechCorp Inc.", "Data Analyst"
 - **Web Scraping**: BeautifulSoup, requests, lxml
 - **Package Manager**: uv (recommended) or pip
 
-## 🔧 **Technical Implementation**
+## **Technical Implementation**
 
 ### **Core Components**
 - **`ResearchContext`**: Dataclass for shared context between agents
@@ -743,7 +743,7 @@ The system uses a **rule-based decision engine** that evaluates:
 4. **Company Characteristics**: Size, industry, growth stage
 5. **Priority Indicators**: Strategic importance and business potential
 
-## 🔒 Security & Compliance
+## Security & Compliance
 
 - **API key management** through environment variables
 - **Professional scraping** with appropriate user agents
@@ -751,7 +751,7 @@ The system uses a **rule-based decision engine** that evaluates:
 - **Data privacy** compliance for lead research
 - **Respectful automation** practices
 
-## 🚀 Future Enhancements
+## Future Enhancements
 
 ### **Planned Features**
 - **CRM integration** (Salesforce, HubSpot)
@@ -767,7 +767,7 @@ The system uses a **rule-based decision engine** that evaluates:
 - **Custom handoff rules** for specific industries or use cases
 - **Handoff analytics** and performance metrics
 
-## 🎯 **Use Cases & Applications**
+##  **Use Cases & Applications**
 
 ### **Sales & Business Development**
 - **Lead Qualification**: Automatically route leads to appropriate specialists
