@@ -43,5 +43,3 @@ new_agent: Agent = Agent(
 
 res = Runner.run_sync(base_agent, "What's the weather in Karachi?")
 print(res)
-
-# Now check the trace in 
