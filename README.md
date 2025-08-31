@@ -621,3 +621,98 @@ This project is designed for business use in lead research and outreach. Please 
 **Built with ❤️ using OpenAI Agents, Python, and Tavily API** | *Transform manual lead research into intelligent AI-powered insights with real-time web intelligence!*
 
 **Tested and proven with real leads including CEOs, technical professionals, and international businesses.**
+
+# Deep Research System - Agentic AI for Lead Research
+
+## 🚀 **Public Deployment Instructions**
+
+### **Deploy on Chainlit Cloud (Recommended)**
+
+1. **Push your code to GitHub:**
+   ```bash
+   git add .
+   git commit -m "Add StatDevs Sales Intelligence System"
+   git push origin main
+   ```
+
+2. **Go to [Chainlit Cloud](https://cloud.chainlit.io/)**
+   - Sign up/Login with GitHub
+   - Click "New App"
+   - Connect your GitHub repository
+   - Select the `deepsearch_project` repository
+
+3. **Configure Environment Variables:**
+   - `OPENAI_API_KEY`: Your OpenAI API key
+   - `OPENAI_TRACE`: Set to `1` for tracing
+
+4. **Deploy:**
+   - Click "Deploy"
+   - Your app will be available at: `https://your-app-name.chainlit.app`
+
+### **Deploy on Railway**
+
+1. **Install Railway CLI:**
+   ```bash
+   npm install -g @railway/cli
+   ```
+
+2. **Create Railway project:**
+   ```bash
+   railway login
+   railway init
+   ```
+
+3. **Deploy:**
+   ```bash
+   railway up
+   ```
+
+### **Deploy on Heroku**
+
+1. **Install Heroku CLI:**
+   ```bash
+   # macOS
+   brew install heroku/brew/heroku
+   ```
+
+2. **Create Heroku app:**
+   ```bash
+   heroku create your-app-name
+   ```
+
+3. **Set environment variables:**
+   ```bash
+   heroku config:set OPENAI_API_KEY=your_key
+   heroku config:set OPENAI_TRACE=1
+   ```
+
+4. **Deploy:**
+   ```bash
+   git push heroku main
+   ```
+
+## 🔧 **Environment Setup for Deployment**
+
+Create a `requirements.txt` file for deployment:
+```bash
+uv export --format requirements-txt --output-file requirements.txt
+```
+
+## 📱 **Public Access**
+
+Once deployed, anyone can:
+- Access your StatDevs Sales Intelligence System
+- Research leads using your AI-powered analysis
+- See your company's capabilities and ROI metrics
+- Generate leads for your business
+
+## 🌐 **Custom Domain (Optional)**
+
+For a professional look, you can:
+- Use Chainlit Cloud's custom domain feature
+- Point your own domain to the deployed app
+- Brand it as `sales.statdevs.com` or similar
+
+---
+
+## Original README Content Below
