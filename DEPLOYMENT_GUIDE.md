@@ -12,39 +12,45 @@ Your **StatDevs Sales Intelligence System** is now ready for public deployment! 
 
 ## 🌐 **Deployment Options**
 
-### **Option 1: Chainlit Cloud (Recommended) ⭐**
+### **Option 1: Railway (Recommended) ⭐**
 
-**Step 1: Access Chainlit Cloud**
-- Go to [https://cloud.chainlit.io/](https://cloud.chainlit.io/)
-- Sign up/Login with your GitHub account
+**Step 1: Install Railway CLI**
+```bash
+npm install -g @railway/cli
+```
 
-**Step 2: Create New App**
-- Click "New App"
-- Connect your repository: `https://github.com/Stat-Devs/deep_search_agent.git`
-- Select the `deepsearch_project` repository
+**Step 2: Create Railway Project**
+```bash
+railway login
+railway init
+```
 
 **Step 3: Configure Environment Variables**
-```
-OPENAI_API_KEY=your_actual_openai_api_key
-OPENAI_TRACE=1
+```bash
+railway variables set OPENAI_API_KEY=your_actual_openai_api_key
+railway variables set OPENAI_TRACE=1
 ```
 
 **Step 4: Deploy**
-- Click "Deploy"
-- Your app will be available at: `https://your-app-name.chainlit.app`
+```bash
+railway up
+```
 
-### **Option 2: Railway**
+### **Option 2: Heroku**
 
 ```bash
-# Install Railway CLI
-npm install -g @railway/cli
+# Install Heroku CLI
+brew install heroku/brew/heroku
 
-# Login and create project
-railway login
-railway init
+# Create app
+heroku create your-app-name
+
+# Set environment variables
+heroku config:set OPENAI_API_KEY=your_key
+heroku config:set OPENAI_TRACE=1
 
 # Deploy
-railway up
+git push heroku main
 ```
 
 ### **Option 3: Heroku**
@@ -114,7 +120,7 @@ The system automatically uses your StatDevs information:
 - Add your logo and company information
 
 ### **Custom Domain**
-- Use Chainlit Cloud's custom domain feature
+- Use Railway's custom domain feature
 - Point your own domain (e.g., `sales.statdevs.com`)
 - Professional branding for your sales team
 
@@ -146,7 +152,7 @@ The system automatically uses your StatDevs information:
 
 ## 🎯 **Next Steps**
 
-1. **Deploy on Chainlit Cloud** (recommended)
+1. **Deploy on Railway** (recommended)
 2. **Test with sample leads** to ensure functionality
 3. **Share with your sales team** for feedback
 4. **Customize branding** to match your company

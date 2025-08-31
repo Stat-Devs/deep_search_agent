@@ -626,7 +626,7 @@ This project is designed for business use in lead research and outreach. Please 
 
 ## 🚀 **Public Deployment Instructions**
 
-### **Deploy on Chainlit Cloud (Recommended)**
+### **Deploy on Railway (Recommended)**
 
 1. **Push your code to GitHub:**
    ```bash
@@ -635,37 +635,29 @@ This project is designed for business use in lead research and outreach. Please 
    git push origin main
    ```
 
-2. **Go to [Chainlit Cloud](https://cloud.chainlit.io/)**
-   - Sign up/Login with GitHub
-   - Click "New App"
-   - Connect your GitHub repository
-   - Select the `deepsearch_project` repository
-
-3. **Configure Environment Variables:**
-   - `OPENAI_API_KEY`: Your OpenAI API key
-   - `OPENAI_TRACE`: Set to `1` for tracing
-
-4. **Deploy:**
-   - Click "Deploy"
-   - Your app will be available at: `https://your-app-name.chainlit.app`
-
-### **Deploy on Railway**
-
-1. **Install Railway CLI:**
+2. **Install Railway CLI:**
    ```bash
    npm install -g @railway/cli
    ```
 
-2. **Create Railway project:**
+3. **Create Railway project:**
    ```bash
    railway login
    railway init
    ```
 
-3. **Deploy:**
+4. **Configure Environment Variables:**
+   ```bash
+   railway variables set OPENAI_API_KEY=your_openai_api_key
+   railway variables set OPENAI_TRACE=1
+   ```
+
+5. **Deploy:**
    ```bash
    railway up
    ```
+
+
 
 ### **Deploy on Heroku**
 
