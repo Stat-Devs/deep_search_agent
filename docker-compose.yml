@@ -1,0 +1,43 @@
+version: '3.8'
+
+services:
+  statdevs-sales-intelligence:
+    build: .
+    container_name: statdevs-sales-ai
+    ports:
+      - "8000:8000"
+    environment:
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - OPENAI_TRACE=${OPENAI_TRACE:-1}
+      - PYTHONPATH=/app
+    volumes:
+      - ./logs:/app/logs
+      - ./uploads:/app/uploads
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    networks:
+      - statdevs-network
+
+  # Optional: Add Redis for session management (uncomment if needed)
+  # redis:
+  #   image: redis:7-alpine
+  #   container_name: statdevs-redis
+  #   ports:
+  #     - "6379:6379"
+  #   volumes:
+  #     - redis_data:/data
+  #   restart: unless-stopped
+  #   networks:
+  #     - statdevs-network
+
+networks:
+  statdevs-network:
+    driver: bridge
+
+# volumes:
+#   redis_data:

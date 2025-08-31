@@ -626,36 +626,33 @@ This project is designed for business use in lead research and outreach. Please 
 
 ## 🚀 **Public Deployment Instructions**
 
-### **Deploy on Railway (Recommended)**
+### **Deploy with Docker (Recommended)**
 
-1. **Push your code to GitHub:**
+1. **Ensure Docker is Running:**
+   - Start Docker Desktop on your machine
+   - Verify with: `docker --version`
+
+2. **Set Up Environment:**
    ```bash
-   git add .
-   git commit -m "Add StatDevs Sales Intelligence System"
-   git push origin main
+   # Copy environment file
+   cp env.example .env
+   
+   # Edit with your API keys
+   nano .env
    ```
 
-2. **Install Railway CLI:**
+3. **Deploy with Docker Compose:**
    ```bash
-   npm install -g @railway/cli
+   # Make script executable (first time only)
+   chmod +x docker-deploy.sh
+   
+   # Run deployment
+   ./docker-deploy.sh
    ```
 
-3. **Create Railway project:**
-   ```bash
-   railway login
-   railway init
-   ```
-
-4. **Configure Environment Variables:**
-   ```bash
-   railway variables set OPENAI_API_KEY=your_openai_api_key
-   railway variables set OPENAI_TRACE=1
-   ```
-
-5. **Deploy:**
-   ```bash
-   railway up
-   ```
+4. **Access Your App:**
+   - Open browser to: `http://localhost:8000`
+   - Your StatDevs Sales Intelligence System is now running!
 
 
 
@@ -685,6 +682,28 @@ This project is designed for business use in lead research and outreach. Please 
 
 ## 🔧 **Environment Setup for Deployment**
 
+### **Docker Commands**
+```bash
+# Start the service
+docker-compose up -d
+
+# View logs
+docker-compose logs -f
+
+# Stop the service
+docker-compose down
+
+# Restart the service
+docker-compose restart
+
+# Update and restart
+docker-compose up --build -d
+
+# Check status
+docker-compose ps
+```
+
+### **Requirements File**
 Create a `requirements.txt` file for deployment:
 ```bash
 uv export --format requirements-txt --output-file requirements.txt

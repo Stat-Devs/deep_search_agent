@@ -12,29 +12,33 @@ Your **StatDevs Sales Intelligence System** is now ready for public deployment! 
 
 ## 🌐 **Deployment Options**
 
-### **Option 1: Railway (Recommended) ⭐**
+### **Option 1: Docker (Recommended) ⭐**
 
-**Step 1: Install Railway CLI**
+**Step 1: Ensure Docker is Running**
+- Start Docker Desktop on your machine
+- Verify with: `docker --version`
+
+**Step 2: Set Up Environment**
 ```bash
-npm install -g @railway/cli
+# Copy environment file
+cp env.example .env
+
+# Edit with your API keys
+nano .env
 ```
 
-**Step 2: Create Railway Project**
+**Step 3: Deploy with Docker Compose**
 ```bash
-railway login
-railway init
+# Make script executable (first time only)
+chmod +x docker-deploy.sh
+
+# Run deployment
+./docker-deploy.sh
 ```
 
-**Step 3: Configure Environment Variables**
-```bash
-railway variables set OPENAI_API_KEY=your_actual_openai_api_key
-railway variables set OPENAI_TRACE=1
-```
-
-**Step 4: Deploy**
-```bash
-railway up
-```
+**Step 4: Access Your App**
+- Open browser to: `http://localhost:8000`
+- Your StatDevs Sales Intelligence System is now running!
 
 ### **Option 2: Heroku**
 
@@ -152,7 +156,7 @@ The system automatically uses your StatDevs information:
 
 ## 🎯 **Next Steps**
 
-1. **Deploy on Railway** (recommended)
+1. **Deploy with Docker** (recommended)
 2. **Test with sample leads** to ensure functionality
 3. **Share with your sales team** for feedback
 4. **Customize branding** to match your company
