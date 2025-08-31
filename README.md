@@ -63,55 +63,19 @@ The system consists of **two versions** - a standard sequential system and an ad
 - **Context Preservation** - Maintains information between agents
 - **Dynamic Routing** - Adapts strategy based on lead characteristics
 
-## 🎯 **New Specialized Agents**
+## 🎯 **Specialized Agents**
 
 ### **Industry Problems Agent**
 - **Purpose**: Identifies potential industry problems, challenges, and pain points that leads may face
-- **Capabilities**:
-  - Industry-specific problem frameworks (Environmental Services, Technology, Manufacturing)
-  - AI-enhanced problem identification
-  - Business impact analysis
-  - Stakeholder and market size assessment
-- **Use Cases**: Lead qualification, value proposition development, sales strategy planning
+- **Capabilities**: Industry-specific problem frameworks, AI-enhanced problem identification, business impact analysis
 
 ### **Solutions Research Agent**
 - **Purpose**: Researches and identifies AI and data analytics solutions for identified industry problems
-- **Capabilities**:
-  - Problem-to-solution mapping
-  - Technology stack recommendations
-  - Implementation timeline estimates
-  - ROI and cost analysis
-  - Industry-specific solution customization
-- **Use Cases**: Solution development, proposal creation, technical sales support
+- **Capabilities**: Problem-to-solution mapping, technology stack recommendations, ROI analysis
 
-## 🏗️ **Agent Manager - Centralized Orchestration** ✅ **INTEGRATED**
-
-### **Purpose**
-The Agent Manager provides centralized orchestration and management for all agents in the system, addressing the critical gaps identified in the codebase analysis. **Now fully integrated into your main `app.py`!**
-
-### **Key Features**
-- **Centralized Agent Management**: Register, start, stop, and monitor all agents
-- **Intelligent Request Routing**: Automatic agent selection based on capabilities and health
-- **Load Balancing**: Distribute requests across available agents
-- **Health Monitoring**: Real-time agent health checks and failure detection
-- **Performance Metrics**: Track response times, success rates, and error rates
-- **Request Queue Management**: Priority-based request processing
-- **Async Processing**: Non-blocking request handling with background processing
-
-### **Architecture Components**
-- **Agent Manager**: Core orchestration engine
-- **Agent Adapters**: Compatibility layer for existing agents
-- **Request Queue**: Priority-based request management
-- **Health Monitor**: Background health checking
-- **Metrics Collector**: Performance data collection
-- **Configuration Management**: YAML-based configuration
-
-### **Benefits**
-- **Scalability**: Easy to add new agents and scale existing ones
-- **Reliability**: Automatic failure detection and recovery
-- **Performance**: Load balancing and concurrent processing
-- **Monitoring**: Real-time system status and metrics
-- **Maintainability**: Centralized configuration and management
+### **Agent Manager - Centralized Orchestration**
+- **Purpose**: Centralized orchestration and management for all agents in the system
+- **Key Features**: Centralized agent management, intelligent request routing, load balancing, health monitoring, performance metrics
 
 ## 🔄 **High-Level System Architecture Diagram**
 
@@ -288,47 +252,15 @@ The Agent Manager provides centralized orchestration and management for all agen
                     └─────────────────────────────────────────────────────────────┘
 ```
 
-## 🆕 **New: Tavily Research Agent**
+## 🆕 **Tavily Research Agent**
 
-The **Tavily Research Agent** (`research_agent_tavily.py`) provides real-time web intelligence and market research to enhance the handoff system:
+The **Tavily Research Agent** provides real-time web intelligence and market research:
 
 ### **Key Features:**
 - **Real-time Web Research** - Live company news, updates, and market data
 - **Contact-Type Specific Analysis** - Tailored research based on handoff decisions
 - **Market Intelligence** - Industry trends, competitive landscape, growth indicators
 - **Opportunity Analysis** - Immediate and strategic opportunities with timing recommendations
-- **Integration Ready** - Seamlessly works with existing handoff system
-
-### **Research Capabilities:**
-```python
-from research_agent_tavily import TavilyResearchAgent
-
-# Initialize agent
-agent = TavilyResearchAgent()
-
-# Comprehensive research with handoff integration
-results = agent.research_lead_with_tavily(
-    company_name="TechCorp Inc.",
-    person_name="John Smith",
-    person_role="CTO",
-    contact_type="executive",
-    company_industry="Technology"
-)
-
-# Quick research for basic intelligence
-summary = agent.quick_research(
-    company_name="DataWorks LLC",
-    person_name="Emily Chen",
-    contact_type="technical"
-)
-```
-
-### **Research Outputs:**
-- **Company Research**: Recent news, challenges, growth indicators
-- **Person Research**: Recent activity, thought leadership, decision influence
-- **Market Research**: Industry trends, competitive landscape
-- **Opportunity Analysis**: Immediate/strategic opportunities with approach strategies
-- **Timing Recommendations**: Contact-specific follow-up timelines
 
 ## 🔄 **How the Handoff System Works**
 
@@ -365,10 +297,6 @@ result = research_lead_with_handoffs(
     website_url="https://techcorp.com",
     email="john@techcorp.com"
 )
-
-print(f"Handoff Agent: {result['handoff_agent']}")
-print(f"Coordinator Analysis: {result['coordinator_result']}")
-print(f"Specialized Analysis: {result['specialized_result']}")
 ```
 
 ### **Tavily Integration**
@@ -386,30 +314,7 @@ research_results = tavily_agent.research_lead_with_tavily(
 )
 ```
 
-### **Command Line Testing**
-```bash
-# Test the handoff system
-uv run demo_handoff_system.py
-
-# Test Tavily integration
-uv run demo_tavily_handoff.py
-
-# Test system structure
-uv run test_handoff_structure.py
-
-# Test complete integration
-uv run test_handoff_tavily_integration.py
-```
-
 ## 🧪 **Testing & Validation**
-
-### **Test Suite Coverage:**
-- **Structure Tests**: 7/7 PASSED ✅
-  - Module imports, data structures, agent definitions, function tools
-- **Integration Tests**: 2/2 PASSED ✅
-  - Complete handoff workflow, multiple contact types
-- **Tavily Integration**: FULLY FUNCTIONAL ✅
-  - Real-time web research, contact-type specific analysis
 
 ### **Run All Tests:**
 ```bash
@@ -436,8 +341,6 @@ deepsearch_project/
 ├── research_agent_industry_problems.py  # 🆕 Industry problems identification agent
 ├── research_agent_solutions.py          # 🆕 AI solutions research agent
 ├── agent_manager.py                     # 🆕 Centralized agent orchestration
-├── agent_adapters.py                    # 🆕 Agent compatibility layer
-├── agent_manager_config.yaml            # 🆕 Configuration file
 ├── app.py                               # 🆕 Updated with Agent Manager integration
 ├── research_agent_website.py           # Website research agent
 ├── research_agent_linkedin.py          # LinkedIn research agent
@@ -465,41 +368,16 @@ deepsearch_project/
 - **Agent Collaboration** - Agents work together, building on each other's findings
 - **Specialized Processing** - Tailored approach for each contact type
 - **Context Preservation** - Shared state management between agent transitions
-- **Dynamic Workflows** - System adapts based on research findings
 
 ### **Tavily Web Intelligence**
 - **Real-time Research** - Live company news, updates, and market data
 - **Contact-Type Specific** - Research focus based on handoff decisions
 - **Market Context** - Industry trends, competitive landscape, growth indicators
-- **Opportunity Analysis** - Immediate and strategic opportunities with timing
-- **Integration Ready** - Seamlessly enhances existing handoff system
 
 ### **Industry Problems & Solutions Analysis**
 - **Problem Identification** - Industry-specific challenges and pain points
 - **Solution Mapping** - AI and data analytics solutions for identified problems
 - **Business Impact Analysis** - Quantified impact and urgency assessment
-- **ROI Estimation** - Implementation costs and return on investment
-- **Industry Customization** - Tailored solutions for specific sectors
-
-### **Professional Output Generation**
-- **Pain point analysis** from company research
-- **Role-specific benefits** and value propositions
-- **Professional tone** and structure
-- **Compelling calls-to-action**
-- **Executive-level communication** for C-suite contacts
-
-## 🔄 **Enhanced Research Workflow**
-
-### **9-Step Comprehensive Research Process**
-1. **Website Analysis** - Company website research and business intelligence
-2. **LinkedIn Research** - Professional profile analysis and background
-3. **Tavily Intelligence** - Real-time web intelligence and market data
-4. **Industry Problems** - Identification of business challenges and pain points
-5. **AI Solutions Research** - Data analytics and AI solution recommendations
-6. **Handoff Strategy** - Intelligent routing and communication approach
-7. **Research Report** - Comprehensive analysis compilation
-8. **Email Pitch** - Personalized outreach generation
-9. **Results Presentation** - Complete research package delivery
 
 ## 🎯 **Agent Specializations**
 
@@ -508,121 +386,6 @@ deepsearch_project/
 | **Executive** | Executive Specialist | Strategic, ROI-focused | ⭐⭐⭐⭐⭐ (5/5) | 2-3 days |
 | **Technical** | Technical Specialist | Technical integration + business outcomes | ⭐⭐⭐⭐ (4/5) | 3-5 days |
 | **General** | General Coordinator | Professional, value-focused | ⭐⭐⭐ (3/5) | 5-7 days |
-
-## 🚀 **Real-World Examples**
-
-### **Example 1: Executive Contact (Sarah Chen - CTO)**
-- **Company**: InnovateTech Solutions
-- **Handoff**: Technical Specialist (4/5 priority)
-- **Tavily Research**: 5 recent news items, 3 challenges, 3 growth indicators
-- **Output**: Technical integration focus with business outcomes
-- **Timeline**: 3-5 business days
-
-### **Example 2: Technical Contact (Mike Rodriguez - Data Engineer)**
-- **Company**: DataFlow Analytics
-- **Handoff**: Technical Specialist (4/5 priority)
-- **Tavily Research**: Market trends, competitive analysis, implementation insights
-- **Output**: Technical depth with business outcomes
-- **Timeline**: 3-5 business days
-
-### **Example 3: General Contact (Lisa Thompson - Marketing Manager)**
-- **Company**: GreenGrowth Corp
-- **Handoff**: General Coordinator (3/5 priority)
-- **Tavily Research**: Industry trends, business value focus
-- **Output**: Professional approach with value propositions
-- **Timeline**: 5-7 business days
-
-## 🔍 **Troubleshooting**
-
-### **Common Issues**
-- **API Key Errors**: Verify `.env` file contains valid keys
-- **Dependency Issues**: Run `uv sync --reinstall`
-- **Website Blocking**: System handles gracefully with fallbacks
-- **Handoff Errors**: Check test output for system validation
-
-### **Testing & Validation**
-```bash
-# Test basic functionality
-uv run test_system.py
-
-# Test handoff system
-uv run test_handoff_structure.py
-
-# Test Tavily integration
-uv run test_handoff_tavily_integration.py
-
-# Test new agents
-uv run python research_agent_industry_problems.py
-uv run python research_agent_solutions.py
-
-# Test Agent Manager
-uv run python test_agent_manager.py
-uv run python demo_agent_manager.py
-
-# Test Integration
-uv run python app.py
-
-# Test with specific leads
-uv run test_christian_lead.py
-```
-
-## 📈 **Performance Metrics**
-
-### **System Performance**
-- **Research Accuracy**: 95%+ based on comprehensive testing
-- **Handoff Success Rate**: 100% for all contact types tested
-- **Processing Speed**: Complete lead analysis in under 2 minutes
-- **Tavily Integration**: Real-time web intelligence in <30 seconds
-
-### **Business Impact**
-- **Lead Qualification**: Automated identification of high-value prospects
-- **Personalization**: Role-specific communication strategies
-- **Efficiency**: 10x faster than manual research processes
-- **Intelligence**: Enhanced insights through real-time web data
-
-## 🔮 **Future Enhancements**
-
-### **Planned Features**
-- **CRM Integration** (Salesforce, HubSpot)
-- **Advanced Analytics** and lead scoring
-- **Multi-language Support** for international markets
-- **Real-time Data** from various sources
-- **Automated Follow-up** sequences
-
-### **Handoff System Extensions**
-- **Human-in-the-loop Handoffs** for complex cases
-- **Multi-agent Collaboration** (3+ agents working together)
-- **Learning Handoff Patterns** from successful conversions
-- **Custom Handoff Rules** for specific industries or use cases
-- **Handoff Analytics** and performance metrics
-
-## 📞 **Support & Contributing**
-
-### **Getting Help**
-1. Check the test output for common issues
-2. Verify API keys are correctly set
-3. Ensure all dependencies are installed
-4. Review error messages for specific guidance
-5. Check generated reports for insights
-
-### **Contributing**
-- Fork the repository
-- Create feature branches
-- Submit pull requests
-- Follow Python coding standards
-- Test with real lead data
-
-## 📄 **License**
-
-This project is designed for business use in lead research and outreach. Please ensure compliance with relevant data protection and scraping regulations in your jurisdiction.
-
----
-
-**Built with ❤️ using OpenAI Agents, Python, and Tavily API** | *Transform manual lead research into intelligent AI-powered insights with real-time web intelligence!*
-
-**Tested and proven with real leads including CEOs, technical professionals, and international businesses.**
-
-# Deep Research System - Agentic AI for Lead Research
 
 ## 🚀 **Deployment Instructions**
 
@@ -698,62 +461,6 @@ docker stop statdevs-sales-ai
 docker rm statdevs-sales-ai
 ```
 
-### **🚀 Alternative Deployment Options**
-
-#### **Railway**
-```bash
-# Install Railway CLI
-npm install -g @railway/cli
-
-# Create project and deploy
-railway login
-railway init
-railway variables set OPENAI_API_KEY=your_key
-railway variables set OPENAI_TRACE=1
-railway up
-```
-
-#### **Heroku**
-```bash
-# Install Heroku CLI
-brew install heroku/brew/heroku
-
-# Create app and deploy
-heroku create your-app-name
-heroku config:set OPENAI_API_KEY=your_key
-heroku config:set OPENAI_TRACE=1
-git push heroku main
-```
-
-## 🔧 **Environment Setup for Deployment**
-
-### **Docker Commands**
-```bash
-# Start the service
-docker-compose up -d
-
-# View logs
-docker-compose logs -f
-
-# Stop the service
-docker-compose down
-
-# Restart the service
-docker-compose restart
-
-# Update and restart
-docker-compose up --build -d
-
-# Check status
-docker-compose ps
-```
-
-### **Requirements File**
-Create a `requirements.txt` file for deployment:
-```bash
-uv export --format requirements-txt --output-file requirements.txt
-```
-
 ## 🚨 **Docker Troubleshooting**
 
 ### **Common Issues & Solutions**
@@ -785,73 +492,61 @@ docker run -d --name statdevs-sales-ai -p 8000:8000 \
   statdevs-sales-ai
 ```
 
-#### **Environment Variables Not Working**
-```bash
-# Verify environment variables
-docker exec statdevs-sales-ai env | grep OPENAI
+## 🔍 **Troubleshooting**
 
-# Restart with correct environment
-docker stop statdevs-sales-ai
-docker rm statdevs-sales-ai
-docker run -d --name statdevs-sales-ai -p 8000:8000 \
-  -e OPENAI_API_KEY=your_actual_key \
-  -e OPENAI_TRACE=1 \
-  statdevs-sales-ai
+### **Common Issues**
+- **API Key Errors**: Verify `.env` file contains valid keys
+- **Dependency Issues**: Run `uv sync --reinstall`
+- **Website Blocking**: System handles gracefully with fallbacks
+- **Handoff Errors**: Check test output for system validation
+
+### **Testing & Validation**
+```bash
+# Test basic functionality
+uv run test_system.py
+
+# Test handoff system
+uv run test_handoff_structure.py
+
+# Test Tavily integration
+uv run test_handoff_tavily_integration.py
+
+# Test new agents
+uv run python research_agent_industry_problems.py
+uv run python research_agent_solutions.py
+
+# Test Agent Manager
+uv run python test_agent_manager.py
+uv run python demo_agent_manager.py
+
+# Test Integration
+uv run python app.py
+
+# Test with specific leads
+uv run test_christian_lead.py
 ```
 
-## 🌐 **Production Deployment**
+## 📞 **Support & Contributing**
 
-### **Cloud Deployment Options**
+### **Getting Help**
+1. Check the test output for common issues
+2. Verify API keys are correctly set
+3. Ensure all dependencies are installed
+4. Review error messages for specific guidance
+5. Check generated reports for insights
 
-#### **AWS ECS/Fargate**
-```bash
-# Build and push to ECR
-aws ecr get-login-password --region us-east-1 | docker login --username AWS --password-stdin <account>.dkr.ecr.us-east-1.amazonaws.com
-docker tag statdevs-sales-ai:latest <account>.dkr.ecr.us-east-1.amazonaws.com/statdevs-sales-ai:latest
-docker push <account>.dkr.ecr.us-east-1.amazonaws.com/statdevs-sales-ai:latest
-```
+### **Contributing**
+- Fork the repository
+- Create feature branches
+- Submit pull requests
+- Follow Python coding standards
+- Test with real lead data
 
-#### **Google Cloud Run**
-```bash
-# Build and push to GCR
-docker tag statdevs-sales-ai:latest gcr.io/<project-id>/statdevs-sales-ai:latest
-docker push gcr.io/<project-id>/statdevs-sales-ai:latest
+## 📄 **License**
 
-# Deploy to Cloud Run
-gcloud run deploy statdevs-sales-ai \
-  --image gcr.io/<project-id>/statdevs-sales-ai:latest \
-  --platform managed \
-  --region us-central1 \
-  --allow-unauthenticated \
-  --port 8000
-```
+This project is designed for business use in lead research and outreach. Please ensure compliance with relevant data protection and scraping regulations in your jurisdiction.
 
-#### **Azure Container Instances**
-```bash
-# Build and push to ACR
-az acr build --registry <registry-name> --image statdevs-sales-ai:latest .
+---
 
-# Deploy to Container Instances
-az container create \
-  --resource-group <resource-group> \
-  --name statdevs-sales-ai \
-  --image <registry-name>.azurecr.io/statdevs-sales-ai:latest \
-  --ports 8000 \
-  --environment-variables OPENAI_API_KEY=your_key OPENAI_TRACE=1
-```
-
-## 📱 **Public Access**
-
-Once deployed, anyone can:
-- Access your StatDevs Sales Intelligence System
-- Research leads using your AI-powered analysis
-- See your company's capabilities and ROI metrics
-- Generate leads for your business
-
-## 🌐 **Custom Domain (Optional)**
-
-For a professional look, you can:
-- Use Chainlit Cloud's custom domain feature
-- Point your own domain to the deployed app
-- Brand it as `sales.statdevs.com` or similar
+**Built with ❤️ using OpenAI Agents, Python, and Tavily API** | *Transform manual lead research into intelligent AI-powered insights with real-time web intelligence!*
 
