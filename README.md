@@ -654,6 +654,29 @@ This project is designed for business use in lead research and outreach. Please 
    - Open browser to: `http://localhost:8000`
    - Your StatDevs Sales Intelligence System is now running!
 
+### **Alternative Docker Commands**
+
+If you prefer manual Docker commands:
+
+```bash
+# Build the image
+docker build -t statdevs-sales-ai .
+
+# Run the container
+docker run -d \
+  --name statdevs-sales-ai \
+  -p 8000:8000 \
+  -e OPENAI_API_KEY=your_api_key \
+  -e OPENAI_TRACE=1 \
+  statdevs-sales-ai
+
+# View logs
+docker logs -f statdevs-sales-ai
+
+# Stop and remove
+docker stop statdevs-sales-ai && docker rm statdevs-sales-ai
+```
+
 
 
 ### **Deploy on Heroku**
@@ -724,6 +747,3 @@ For a professional look, you can:
 - Point your own domain to the deployed app
 - Brand it as `sales.statdevs.com` or similar
 
----
-
-## Original README Content Below

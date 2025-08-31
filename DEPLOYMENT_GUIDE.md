@@ -40,6 +40,26 @@ chmod +x docker-deploy.sh
 - Open browser to: `http://localhost:8000`
 - Your StatDevs Sales Intelligence System is now running!
 
+**Alternative: Manual Docker Commands**
+```bash
+# Build the image
+docker build -t statdevs-sales-ai .
+
+# Run the container
+docker run -d \
+  --name statdevs-sales-ai \
+  -p 8000:8000 \
+  -e OPENAI_API_KEY=your_api_key \
+  -e OPENAI_TRACE=1 \
+  statdevs-sales-ai
+
+# View logs
+docker logs -f statdevs-sales-ai
+
+# Stop and remove
+docker stop statdevs-sales-ai && docker rm statdevs-sales-ai
+```
+
 ### **Option 2: Heroku**
 
 ```bash
@@ -77,6 +97,8 @@ git push heroku main
 ## 🔧 **Environment Setup**
 
 ### **Local Development**
+
+#### **Option 1: Direct Python (Recommended for Development)**
 ```bash
 # Copy example environment file
 cp env.example .env
@@ -91,10 +113,86 @@ uv sync
 uv run chainlit run app.py -w
 ```
 
+#### **Option 2: Docker Development**
+```bash
+# Build development image
+docker build -t statdevs-sales-ai:dev .
+
+# Run with volume mounting for live code changes
+docker run -d --name statdevs-sales-ai-dev \
+  -p 8000:8000 \
+  -v $(pwd):/app \
+  -e OPENAI_API_KEY=your_api_key \
+  -e OPENAI_TRACE=1 \
+  statdevs-sales-ai:dev
+
+# View logs
+docker logs -f statdevs-sales-ai-dev
+
+# Stop development container
+docker stop statdevs-sales-ai-dev && docker rm statdevs-sales-ai-dev
+```
+
 ### **Production Deployment**
 - Use `requirements.txt` for dependency installation
 - Set environment variables in your hosting platform
 - Never commit `.env` files to git
+
+### **Docker Management Commands**
+
+#### **Using Docker Compose (Recommended)**
+```bash
+# Start the service
+docker-compose up -d
+
+# View logs
+docker-compose logs -f
+
+# Stop the service
+docker-compose down
+
+# Restart the service
+docker-compose restart
+
+# Update and restart
+docker-compose up --build -d
+
+# Check status
+docker-compose ps
+
+# View resource usage
+docker-compose top
+```
+
+#### **Using Docker Directly**
+```bash
+# Build image
+docker build -t statdevs-sales-ai .
+
+# Run container
+docker run -d --name statdevs-sales-ai -p 8000:8000 \
+  -e OPENAI_API_KEY=your_api_key \
+  -e OPENAI_TRACE=1 \
+  statdevs-sales-ai
+
+# View logs
+docker logs -f statdevs-sales-ai
+
+# Stop container
+docker stop statdevs-sales-ai
+
+# Remove container
+docker rm statdevs-sales-ai
+
+# View running containers
+docker ps
+
+# View all containers
+docker ps -a
+
+# View resource usage
+docker stats
+```
 
 ## 📱 **Public Access Features**
 
@@ -120,13 +218,54 @@ The system automatically uses your StatDevs information:
 
 ### **Branding**
 - Update company name and services in `STATDEVS_CONTEXT`
-- Modify colors and themes in `.chainlit/config.toml`
+- Modify colors and themes in your application
 - Add your logo and company information
 
 ### **Custom Domain**
-- Use Railway's custom domain feature
+- Use your hosting provider's custom domain feature
 - Point your own domain (e.g., `sales.statdevs.com`)
 - Professional branding for your sales team
+
+## 🚀 **Docker Production Deployment**
+
+### **Cloud Deployment Options**
+
+#### **AWS ECS/Fargate**
+```bash
+# Build and push to ECR
+aws ecr get-login-password --region us-east-1 | docker login --username AWS --password-stdin <account>.dkr.ecr.us-east-1.amazonaws.com
+docker tag statdevs-sales-ai:latest <account>.dkr.ecr.us-east-1.amazonaws.com/statdevs-sales-ai:latest
+docker push <account>.dkr.ecr.us-east-1.amazonaws.com/statdevs-sales-ai:latest
+```
+
+#### **Google Cloud Run**
+```bash
+# Build and push to GCR
+docker tag statdevs-sales-ai:latest gcr.io/<project-id>/statdevs-sales-ai:latest
+docker push gcr.io/<project-id>/statdevs-sales-ai:latest
+
+# Deploy to Cloud Run
+gcloud run deploy statdevs-sales-ai \
+  --image gcr.io/<project-id>/statdevs-sales-ai:latest \
+  --platform managed \
+  --region us-central1 \
+  --allow-unauthenticated \
+  --port 8000
+```
+
+#### **Azure Container Instances**
+```bash
+# Build and push to ACR
+az acr build --registry <registry-name> --image statdevs-sales-ai:latest .
+
+# Deploy to Container Instances
+az container create \
+  --resource-group <resource-group> \
+  --name statdevs-sales-ai \
+  --image <registry-name>.azurecr.io/statdevs-sales-ai:latest \
+  --ports 8000 \
+  --environment-variables OPENAI_API_KEY=your_key OPENAI_TRACE=1
+```
 
 ## 📊 **Analytics & Monitoring**
 
@@ -141,6 +280,63 @@ The system automatically uses your StatDevs information:
 ✅ **Git Security**: Sensitive files excluded from version control
 ✅ **Access Control**: Public access with optional authentication
 ✅ **Data Privacy**: No user data stored permanently
+
+## 🔧 **Docker Troubleshooting**
+
+### **Common Issues & Solutions**
+
+#### **Port Already in Use**
+```bash
+# Check what's using port 8000
+lsof -i :8000
+
+# Kill the process
+kill -9 <PID>
+
+# Or use a different port
+docker run -p 8001:8000 statdevs-sales-ai
+```
+
+#### **Container Won't Start**
+```bash
+# Check container logs
+docker logs statdevs-sales-ai
+
+# Check container status
+docker ps -a
+
+# Remove and recreate
+docker rm statdevs-sales-ai
+docker run -d --name statdevs-sales-ai -p 8000:8000 \
+  -e OPENAI_API_KEY=your_api_key \
+  statdevs-sales-ai
+```
+
+#### **Build Failures**
+```bash
+# Clean Docker cache
+docker system prune -a
+
+# Rebuild without cache
+docker build --no-cache -t statdevs-sales-ai .
+
+# Check Dockerfile syntax
+docker build --dry-run .
+```
+
+#### **Environment Variables Not Working**
+```bash
+# Verify environment variables
+docker exec statdevs-sales-ai env | grep OPENAI
+
+# Restart with correct environment
+docker stop statdevs-sales-ai
+docker rm statdevs-sales-ai
+docker run -d --name statdevs-sales-ai -p 8000:8000 \
+  -e OPENAI_API_KEY=your_actual_key \
+  -e OPENAI_TRACE=1 \
+  statdevs-sales-ai
+```
 
 ## 📞 **Support & Maintenance**
 
