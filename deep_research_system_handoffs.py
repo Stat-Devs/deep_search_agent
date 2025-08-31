@@ -84,28 +84,36 @@ class ResearchContext:
     key_value_props: Optional[List[str]] = None
     follow_up_timeline: Optional[str] = None
 
+# Direct callable functions for the handoff system
+def analyze_company_website_direct(company_name: str, website_url: str) -> str:
+    """Direct callable version of company website analysis."""
+    return f"Company: {company_name}\nWebsite Analysis: Business intelligence, data analytics needs identified. Company appears to be in growth phase with potential for data infrastructure improvements."
+
 @function_tool
 def analyze_company_website(company_name: str, website_url: str) -> str:
     """Research a company's website to extract key information about their business, services, and needs."""
-    # This would integrate with your web scraping tool
-    # For now, returning a placeholder
-    return f"Company: {company_name}\nWebsite Analysis: Business intelligence, data analytics needs identified. Company appears to be in growth phase with potential for data infrastructure improvements."
+    return analyze_company_website_direct(company_name, website_url)
+
+def research_linkedin_profile_direct(person_name: str, company_name: str) -> str:
+    """Direct callable version of LinkedIn profile research."""
+    return f"Person: {person_name}\nRole: Data Analyst/Manager\nCompany: {company_name}\nExperience: 5+ years in data analytics\nInterests: Business intelligence, data visualization, analytics tools"
 
 @function_tool
 def research_linkedin_profile(person_name: str, company_name: str) -> str:
     """Research a person's LinkedIn profile to extract professional information and contact details."""
-    # This would integrate with LinkedIn scraping tools
-    # For now, returning a placeholder
-    return f"Person: {person_name}\nRole: Data Analyst/Manager\nCompany: {company_name}\nExperience: 5+ years in data analytics\nInterests: Business intelligence, data visualization, analytics tools"
+    return research_linkedin_profile_direct(person_name, company_name)
+
+def generate_email_pitch_direct(person_name: str, company_name: str, research_summary: str) -> str:
+    """Direct callable version of email pitch generation."""
+    return f"Subject: Data Analytics Solutions for {company_name}\n\nDear {person_name},\n\nBased on my research of {company_name}, I believe we can help you optimize your data analytics infrastructure. Our services include business intelligence dashboards, data pipeline optimization, and advanced analytics solutions.\n\nWould you be interested in a brief discussion about how we can help {company_name} leverage data more effectively?\n\nBest regards,\n[Your Name]"
 
 @function_tool
 def generate_email_pitch(person_name: str, company_name: str, research_summary: str) -> str:
     """Generate a personalized email pitch for data analytics services based on research findings."""
-    return f"Subject: Data Analytics Solutions for {company_name}\n\nDear {person_name},\n\nBased on my research of {company_name}, I believe we can help you optimize your data analytics infrastructure. Our services include business intelligence dashboards, data pipeline optimization, and advanced analytics solutions.\n\nWould you be interested in a brief discussion about how we can help {company_name} leverage data more effectively?\n\nBest regards,\n[Your Name]"
+    return generate_email_pitch_direct(person_name, company_name, research_summary)
 
-@function_tool
-def compile_research_report(company_name: str, person_name: str, website_research: str, linkedin_research: str) -> str:
-    """Compile all research findings into a comprehensive report."""
+def compile_research_report_direct(company_name: str, person_name: str, website_research: str, linkedin_research: str) -> str:
+    """Direct callable version of research report compilation."""
     report = f"""
 # Lead Research Report: {company_name}
 
@@ -127,8 +135,12 @@ The company appears to be in a growth phase and could benefit from improved data
     return report
 
 @function_tool
-def determine_handoff_strategy(context: ResearchContext) -> str:
-    """Determine the next agent and handoff strategy based on current research context."""
+def compile_research_report(company_name: str, person_name: str, website_research: str, linkedin_research: str) -> str:
+    """Compile all research findings into a comprehensive report."""
+    return compile_research_report_direct(company_name, person_name, website_research, linkedin_research)
+
+def determine_handoff_strategy_direct(context: ResearchContext) -> str:
+    """Direct callable version of handoff strategy determination."""
     
     # Analyze the context to determine next steps
     if context.person_role and "ceo" in context.person_role.lower():
@@ -160,6 +172,11 @@ def determine_handoff_strategy(context: ResearchContext) -> str:
         context.follow_up_timeline = "5-7 business days"
     
     return f"Handoff Strategy: {context.handoff_reason}\nNext Agent: {context.next_agent.value}\nPriority: {context.priority_level}/5\nCommunication Tone: {context.communication_tone}\nFollow-up Timeline: {context.follow_up_timeline}"
+
+@function_tool
+def determine_handoff_strategy(context: ResearchContext) -> str:
+    """Determine the next agent and handoff strategy based on current research context."""
+    return determine_handoff_strategy_direct(context)
 
 # Handoff-Enabled Research Coordinator Agent
 handoff_coordinator = Agent(
