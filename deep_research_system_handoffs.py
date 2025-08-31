@@ -49,6 +49,8 @@ class AgentType(Enum):
     EXECUTIVE_SPECIALIST = "executive_specialist"
     TECHNICAL_SPECIALIST = "technical_specialist"
     HUMAN_REVIEWER = "human_reviewer"
+    INDUSTRY_PROBLEMS_SPECIALIST = "industry_problems_specialist"
+    SOLUTIONS_RESEARCHER = "solutions_researcher"
 
 @dataclass
 class ResearchContext:
@@ -83,6 +85,10 @@ class ResearchContext:
     communication_tone: Optional[str] = None
     key_value_props: Optional[List[str]] = None
     follow_up_timeline: Optional[str] = None
+    
+    # Problem and solution analysis
+    industry_problems: Optional[List[str]] = None
+    potential_solutions: Optional[str] = None
 
 # Direct callable functions for the handoff system
 def analyze_company_website_direct(company_name: str, website_url: str) -> str:
@@ -178,6 +184,32 @@ def determine_handoff_strategy(context: ResearchContext) -> str:
     """Determine the next agent and handoff strategy based on current research context."""
     return determine_handoff_strategy_direct(context)
 
+def identify_industry_problems_direct(company_industry: str, company_size: str, company_location: str, person_role: str) -> str:
+    """Direct callable version of industry problems identification."""
+    try:
+        from research_agent_industry_problems import identify_lead_problems_direct
+        return identify_lead_problems_direct(company_industry, company_size, company_location, person_role)
+    except ImportError:
+        return f"Industry problems analysis for {company_industry} industry, {company_size} company, {company_location} location, {person_role} role."
+
+@function_tool
+def identify_industry_problems(company_industry: str, company_size: str, company_location: str, person_role: str) -> str:
+    """Identify potential industry problems and challenges the lead may face."""
+    return identify_industry_problems_direct(company_industry, company_size, company_location, person_role)
+
+def research_ai_solutions_direct(industry_problems: List[str], company_industry: str, company_size: str) -> str:
+    """Direct callable version of AI solutions research."""
+    try:
+        from research_agent_solutions import research_solutions_for_problems_direct
+        return research_solutions_for_problems_direct(industry_problems, company_industry, company_size)
+    except ImportError:
+        return f"AI solutions research for {company_industry} industry problems: {', '.join(industry_problems)}"
+
+@function_tool
+def research_ai_solutions(industry_problems: List[str], company_industry: str, company_size: str) -> str:
+    """Research AI and data analytics solutions for identified industry problems."""
+    return research_ai_solutions_direct(industry_problems, company_industry, company_size)
+
 # Handoff-Enabled Research Coordinator Agent
 handoff_coordinator = Agent(
     name="HandoffResearchCoordinator",
@@ -199,7 +231,7 @@ handoff_coordinator = Agent(
     
     Always provide clear reasoning for handoff decisions and ensure smooth transitions between agents.""",
     model=openai_model,
-    tools=[analyze_company_website, research_linkedin_profile, generate_email_pitch, compile_research_report, determine_handoff_strategy]
+    tools=[analyze_company_website, research_linkedin_profile, generate_email_pitch, compile_research_report, determine_handoff_strategy, identify_industry_problems, research_ai_solutions]
 )
 
 # Executive Specialist Agent

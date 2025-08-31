@@ -1,539 +1,440 @@
-from openai import AsyncOpenAI
+"""
+Example Integration: App.py with Agent Manager
+
+This file shows how to integrate the Agent Manager with your existing
+Chainlit application to provide centralized agent orchestration.
+"""
+
 import chainlit as cl
+import asyncio
+from typing import Dict, Any, Optional
 import os
 from dotenv import load_dotenv
-from typing import Dict, Any, Optional
-import json
-from datetime import datetime
-
-# Import our research system components
-from deep_research_system_handoffs import (
-    ResearchContext, 
-    AgentType, 
-    determine_handoff_strategy_direct,
-    analyze_company_website_direct,
-    research_linkedin_profile_direct,
-    generate_email_pitch_direct,
-    compile_research_report_direct
-)
 
 # Load environment variables
 load_dotenv()
 
-# Initialize OpenAI client
-client = AsyncOpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+# Import the Agent Manager
+from agent_manager import initialize_agent_manager, get_agent_manager
+from agent_adapters import register_all_agents
 
-# Instrument the OpenAI client for Chainlit
-cl.instrument_openai()
+# Global variables
+agent_manager = None
+PROBLEMS_SOLUTIONS_AVAILABLE = False
 
-# Sales team assistant settings
-settings = {
-    "model": "gpt-4",
-    "temperature": 0.1,
-    "max_tokens": 2000
-}
-
-# Sales team context and capabilities
-SALES_SYSTEM_PROMPT = """You are an AI Sales Intelligence Assistant for a data analytics services company. 
-
-Your capabilities include:
-1. **Lead Research & Analysis** - Research companies, contacts, and market opportunities
-2. **Intelligent Handoff Routing** - Determine the best approach for different contact types
-3. **Sales Strategy Development** - Create personalized outreach strategies
-4. **Market Intelligence** - Provide industry insights and competitive analysis
-5. **Email Pitch Generation** - Create compelling, personalized email pitches
-
-Contact Types & Approaches:
-- **Executive Contacts** (CEO/CTO/CFO): Strategic, ROI-focused, high priority (2-3 days)
-- **Technical Contacts** (Engineers/Analysts): Technical integration + business outcomes (3-5 days)
-- **General Contacts** (Managers/Coordinators): Professional, value-focused (5-7 days)
-
-Always provide actionable insights and next steps for the sales team."""
+async def initialize_system():
+    """Initialize the Agent Manager and register all agents."""
+    global agent_manager, PROBLEMS_SOLUTIONS_AVAILABLE
+    
+    try:
+        # Initialize the Agent Manager
+        agent_manager = await initialize_agent_manager()
+        
+        # Register all available agents
+        success = await register_all_agents(agent_manager)
+        
+        if success:
+            print("✅ All agents registered successfully with Agent Manager")
+            PROBLEMS_SOLUTIONS_AVAILABLE = True
+        else:
+            print("⚠️ Some agents failed to register")
+            
+        return True
+        
+    except Exception as e:
+        print(f"❌ Failed to initialize Agent Manager: {e}")
+        return False
 
 @cl.on_chat_start
 async def on_chat_start():
-    """Initialize the sales assistant when the chat starts."""
-    await cl.Message(
-        content="🚀 **Sales Intelligence Assistant - BETA VERSION** 🧪\n\n"
-               "⚠️ **This is a beta version of the tool. Features may evolve and improve over time.**\n\n"
-               "I'm here to help your sales team with:\n"
-               "• 🔍 Lead research and analysis\n"
-               "• 🎯 Intelligent handoff strategies\n"
-               "• 📧 Personalized email pitches\n"
-               "• 📊 Market intelligence and insights\n"
-               "• 🚀 Sales strategy development\n\n"
-               "**Example queries:**\n"
-               "• 'Research TechCorp Inc. and their CTO John Smith'\n"
-               "• 'Create a pitch for a data engineer at DataFlow Analytics'\n"
-               "• 'What's the best approach for a CEO contact?'\n"
-               "• 'Generate an email for a marketing manager'\n\n"
-               "**Beta Feedback:** We'd love to hear your experience and suggestions!\n\n"
-               "📝 **Have a Feature Request?** [Submit it here](https://forms.gle/D9uAUPtJR1gmoDCD7)\n\n"
-               "How can I help you today?"
-    ).send()
+    """Initialize the chat session."""
+    global agent_manager
+    
+    # Initialize the system if not already done
+    if agent_manager is None:
+        await initialize_system()
+    
+    # Display welcome message
+    welcome_message = f"""
+# 🚀 **Deep Research System - BETA VERSION** 🚀
+
+Welcome to the **AI-Powered Sales Intelligence Platform**!
+
+## 🎯 **Available Capabilities:**
+- **Lead Research**: Website analysis, LinkedIn profiling, market intelligence
+- **Industry Analysis**: Problem identification and solution mapping
+- **AI Solutions**: Data analytics and AI solution recommendations
+- **Email Generation**: Personalized outreach emails
+- **Comprehensive Reports**: Complete lead analysis and recommendations
+
+## 🔧 **System Status:**
+"""
+    
+    if agent_manager:
+        status = agent_manager.get_system_status()
+        welcome_message += f"""
+- **System**: {status['status'].upper()}
+- **Active Agents**: {status['active_agents']}/{status['total_agents']}
+- **Queue Status**: {status['queue_size']} pending requests
+"""
+    else:
+        welcome_message += "- **System**: Initializing..."
+    
+    welcome_message += f"""
+
+## 📝 **How to Use:**
+
+### **Option 1: Comprehensive Lead Research**
+```
+Company: [Company Name]
+Contact: [Person Name]
+Role: [Job Title]
+Email: [Email Address]
+LinkedIn: [LinkedIn URL]
+Phone: [Phone Number]
+Website: [Website URL]
+```
+
+### **Option 2: Industry Problems Analysis**
+```
+Analyze problems for: [Company Name] in [Industry]
+```
+
+### **Option 3: AI Solutions Research**
+```
+Find AI solutions for: [Company Name] in [Industry]
+```
+
+## 🆘 **Need Help?**
+- **Feature Requests**: [Submit Here](https://forms.gle/D9uAUPtJR1gmoDCD7)
+- **System Status**: Check agent health and performance
+- **Support**: Contact the development team
+
+---
+*Powered by Advanced AI Agents with Centralized Orchestration* 🧠✨
+"""
+    
+    await cl.Message(content=welcome_message).send()
 
 @cl.on_message
 async def on_message(message: cl.Message):
-    """Handle incoming messages from the sales team."""
+    """Handle incoming messages."""
+    global agent_manager, PROBLEMS_SOLUTIONS_AVAILABLE
     
-    user_query = message.content.lower()
+    user_input = message.content.strip()
     
-    # Check if this is a lead research request
-    if any(keyword in user_query for keyword in ['research', 'analyze', 'investigate', 'look up']):
-        await handle_lead_research(message)
+    # Check if system is initialized
+    if agent_manager is None:
+        await cl.Message(content="🔄 System is initializing, please wait...").send()
         return
     
-    # Check if this is a pitch generation request
-    elif any(keyword in user_query for keyword in ['pitch', 'email', 'outreach', 'message']):
-        await handle_pitch_generation(message)
-        return
+    # Check system status
+    status = agent_manager.get_system_status()
+    if status['status'] == 'degraded':
+        await cl.Message(content="⚠️ System is currently degraded. Some agents may be unavailable.").send()
     
-    # Check if this is a handoff strategy request
-    elif any(keyword in user_query for keyword in ['handoff', 'strategy', 'approach', 'route']):
-        await handle_handoff_strategy(message)
-        return
-    
-    # Check if this is a market intelligence request
-    elif any(keyword in user_query for keyword in ['market', 'industry', 'competitive', 'trends']):
-        await handle_market_intelligence(message)
-        return
-    
-    # Default: General sales assistance
+    # Handle different types of requests
+    if "company:" in user_input.lower() and "contact:" in user_input.lower():
+        # Comprehensive lead research
+        await handle_comprehensive_research(user_input)
+    elif "analyze problems" in user_input.lower():
+        # Industry problems analysis
+        await handle_problems_identification(user_input)
+    elif "find ai solutions" in user_input.lower():
+        # AI solutions research
+        await handle_solutions_research(user_input)
+    elif "system status" in user_input.lower():
+        # Display system status
+        await display_system_status()
+    elif "agent metrics" in user_input.lower():
+        # Display agent metrics
+        await display_agent_metrics()
     else:
-        await handle_general_sales_assistance(message)
+        # General help
+        await cl.Message(content="🤔 I'm not sure what you'd like me to do. Try asking me to research a lead, analyze industry problems, or find AI solutions!").send()
 
-async def handle_lead_research(message: cl.Message):
-    """Handle lead research requests."""
-    
-    # Send initial response
-    await cl.Message(
-        content="🔍 **Lead Research Initiated**\n\n"
-               "I'm analyzing your lead. Please provide:\n"
-               "• Company name\n"
-               "• Contact person's name and role\n"
-               "• Website URL (if available)\n"
-               "• LinkedIn URL (if available)\n\n"
-               "Or simply describe the lead you want me to research."
-    ).send()
-    
-    # Use OpenAI to extract structured information
-    extraction_prompt = f"""
-    Extract company and contact information from this sales query:
-    "{message.content}"
-    
-    Return a JSON object with:
-    {{
-        "company_name": "extracted company name",
-        "person_name": "extracted person name", 
-        "person_role": "extracted role or title",
-        "website_url": "extracted website if mentioned",
-        "linkedin_url": "extracted LinkedIn if mentioned",
-        "additional_context": "any other relevant details"
-    }}
-    
-    If information is missing, use "Unknown" or null.
-    """
-    
+async def handle_comprehensive_research(user_input: str):
+    """Handle comprehensive lead research using the Agent Manager."""
     try:
-        response = await client.chat.completions.create(
-            messages=[
-                {"role": "system", "content": "You are a helpful assistant that extracts structured information from text. Always return valid JSON."},
-                {"role": "user", "content": extraction_prompt}
-            ],
-            **settings
-        )
+        # Extract lead information
+        lead_info = extract_lead_information(user_input)
         
-        extracted_info = json.loads(response.choices[0].message.content)
+        if not lead_info:
+            await cl.Message(content="❌ Could not extract lead information. Please provide company and contact details.").send()
+            return
         
-        # Create research context
-        context = ResearchContext(
-            company_name=extracted_info.get("company_name", "Unknown Company"),
-            person_name=extracted_info.get("person_name", "Unknown Contact"),
-            website_url=extracted_info.get("website_url"),
-            linkedin_url=extracted_info.get("linkedin_url"),
-            person_role=extracted_info.get("person_role")
-        )
+        await cl.Message(content="🔍 **Starting Comprehensive Lead Research...**\n\nThis will use multiple AI agents to analyze the lead thoroughly.").send()
         
-        # Perform research
-        await perform_comprehensive_research(context)
-        
-    except Exception as e:
-        await cl.Message(
-            content=f"❌ **Research Error**\n\n"
-                   f"Sorry, I encountered an error while processing your request:\n"
-                   f"`{str(e)}`\n\n"
-                   f"Please try rephrasing your request or provide more specific details."
-        ).send()
-
-async def perform_comprehensive_research(context: ResearchContext):
-    """Perform comprehensive lead research."""
-    
-    # Step 1: Website Analysis
-    if context.website_url:
-        await cl.Message(content="🌐 **Analyzing company website...**").send()
-        try:
-            context.website_research = analyze_company_website_direct(
-                context.company_name, 
-                context.website_url
+        # Step 1: Website Research
+        if lead_info.get('website_url'):
+            await cl.Message(content="🌐 **Step 1: Website Research**\nAnalyzing company website...").send()
+            
+            # Submit request to Agent Manager
+            from agent_manager import RequestPriority
+            request_id = agent_manager.submit_request(
+                request_type="website_research",
+                payload={
+                    "company_name": lead_info['company_name'],
+                    "website_url": lead_info['website_url']
+                },
+                priority=RequestPriority.HIGH
             )
-            await cl.Message(content="✅ Website analysis complete").send()
-        except Exception as e:
-            context.website_research = f"Website analysis failed: {str(e)}"
-    
-    # Step 2: LinkedIn Research
-    if context.linkedin_url or context.person_name:
-        await cl.Message(content="👔 **Researching contact profile...**").send()
-        try:
-            context.linkedin_research = research_linkedin_profile_direct(
-                context.person_name, 
-                context.company_name
-            )
-            await cl.Message(content="✅ LinkedIn research complete").send()
-        except Exception as e:
-            context.linkedin_research = f"LinkedIn research failed: {str(e)}"
-    
-    # Step 3: Handoff Strategy
-    await cl.Message(content="🎯 **Determining best approach...**").send()
-    try:
-        handoff_strategy = determine_handoff_strategy_direct(context)
-        # The function modifies the context directly, so we just need to get the result
-        await cl.Message(content="✅ Handoff strategy determined").send()
-    except Exception as e:
-        await cl.Message(content=f"⚠️ Handoff strategy failed: {str(e)}").send()
-    
-    # Step 4: Generate Research Report
-    await cl.Message(content="📊 **Compiling research report...**").send()
-    try:
-        research_report = compile_research_report_direct(
-            context.company_name,
-            context.person_name,
-            context.website_research or "No website research available",
-            context.linkedin_research or "No LinkedIn research available"
-        )
-        await cl.Message(content="✅ Research report compiled").send()
-    except Exception as e:
-        research_report = f"Report compilation failed: {str(e)}"
-    
-    # Step 5: Generate Email Pitch
-    await cl.Message(content="📧 **Creating personalized email pitch...**").send()
-    try:
-        # Create a research summary for email generation
-        research_summary = f"""
-Company: {context.company_name}
-Contact: {context.person_name}
-Role: {context.person_role or 'Unknown'}
-Website Research: {context.website_research or 'Not available'}
-LinkedIn Research: {context.linkedin_research or 'Not available'}
-Handoff Strategy: {context.handoff_reason or 'Standard approach'}
-        """.strip()
+            
+            # Wait for result
+            result = await agent_manager.get_request_result(request_id, timeout=60.0)
+            
+            if result and result.status == 'completed':
+                await cl.Message(content=f"✅ **Website Research Complete**\n\n{result.result}").send()
+            else:
+                await cl.Message(content="❌ Website research failed or timed out.").send()
         
-        email_pitch = generate_email_pitch_direct(
-            context.person_name,
-            context.company_name,
-            research_summary
-        )
-        await cl.Message(content="✅ Email pitch created").send()
+        # Step 2: Industry Problems Analysis
+        if lead_info.get('company_industry'):
+            await cl.Message(content="🎯 **Step 2: Industry Problems Analysis**\nIdentifying potential challenges...").send()
+            
+            request_id = agent_manager.submit_request(
+                request_type="industry_problems",
+                payload={
+                    "company_industry": lead_info['company_industry'],
+                    "company_size": lead_info.get('company_size', 'Unknown'),
+                    "company_location": lead_info.get('company_location', 'Unknown'),
+                    "person_role": lead_info.get('person_role', 'Unknown')
+                },
+                priority=RequestPriority.HIGH
+            )
+            
+            result = await agent_manager.get_request_result(request_id, timeout=60.0)
+            
+            if result and result.status == 'completed':
+                await cl.Message(content=f"✅ **Industry Problems Analysis Complete**\n\n{result.result}").send()
+            else:
+                await cl.Message(content="❌ Industry problems analysis failed or timed out.").send()
+        
+        # Step 3: AI Solutions Research
+        if lead_info.get('company_industry'):
+            await cl.Message(content="🤖 **Step 3: AI Solutions Research**\nFinding relevant AI solutions...").send()
+            
+            request_id = agent_manager.submit_request(
+                request_type="ai_solutions",
+                payload={
+                    "company_industry": lead_info['company_industry'],
+                    "company_size": lead_info.get('company_size', 'Unknown'),
+                    "industry_problems": "General industry challenges"  # Placeholder
+                },
+                priority=RequestPriority.HIGH
+            )
+            
+            result = await agent_manager.get_request_result(request_id, timeout=60.0)
+            
+            if result and result.status == 'completed':
+                await cl.Message(content=f"✅ **AI Solutions Research Complete**\n\n{result.result}").send()
+            else:
+                await cl.Message(content="❌ AI solutions research failed or timed out.").send()
+        
+        # Final summary
+        await cl.Message(content="🎉 **Comprehensive Research Complete!**\n\nAll available agents have analyzed the lead. Check the results above for insights and recommendations.").send()
+        
     except Exception as e:
-        email_pitch = f"Email generation failed: {str(e)}"
+        await cl.Message(content=f"❌ **Research Error**: {str(e)}\n\nPlease try again or contact support.").send()
+
+async def handle_problems_identification(user_input: str):
+    """Handle industry problems identification."""
+    try:
+        company_info = extract_company_info_from_message(user_input)
+        
+        if not company_info:
+            await cl.Message(content="❌ Could not extract company information. Please specify the company and industry.").send()
+            return
+        
+        await cl.Message(content=f"🎯 **Analyzing Industry Problems for {company_info['company_name']}**\n\nThis may take a few moments...").send()
+        
+        # Submit request to Agent Manager
+        request_id = agent_manager.submit_request(
+            request_type="industry_problems",
+            payload={
+                "company_industry": company_info['company_industry'],
+                "company_size": company_info.get('company_size', 'Unknown'),
+                "company_location": company_info.get('company_location', 'Unknown'),
+                "person_role": company_info.get('person_role', 'Unknown')
+            },
+            priority=RequestPriority.HIGH
+        )
+        
+        # Wait for result
+        result = await agent_manager.get_request_result(request_id, timeout=60.0)
+        
+        if result and result.status == 'completed':
+            await cl.Message(content=f"✅ **Industry Problems Analysis Complete**\n\n{result.result}").send()
+        else:
+            await cl.Message(content="❌ Industry problems analysis failed or timed out.").send()
+            
+    except Exception as e:
+        await cl.Message(content=f"❌ **Problems Analysis Error**: {str(e)}").send()
+
+async def handle_solutions_research(user_input: str):
+    """Handle AI solutions research."""
+    try:
+        company_info = extract_company_info_from_message(user_input)
+        
+        if not company_info:
+            await cl.Message(content="❌ Could not extract company information. Please specify the company and industry.").send()
+            return
+        
+        await cl.Message(content=f"🤖 **Researching AI Solutions for {company_info['company_name']}**\n\nThis may take a few moments...").send()
+        
+        # Submit request to Agent Manager
+        request_id = agent_manager.submit_request(
+            request_type="ai_solutions",
+            payload={
+                "company_industry": company_info['company_industry'],
+                "company_size": company_info.get('company_size', 'Unknown'),
+                "industry_problems": "General industry challenges"  # Placeholder
+            },
+            priority=RequestPriority.HIGH
+        )
+        
+        # Wait for result
+        result = await agent_manager.get_request_result(request_id, timeout=60.0)
+        
+        if result and result.status == 'completed':
+            await cl.Message(content=f"✅ **AI Solutions Research Complete**\n\n{result.result}").send()
+        else:
+            await cl.Message(content="❌ AI solutions research failed or timed out.").send()
+            
+    except Exception as e:
+        await cl.Message(content=f"❌ **Solutions Research Error**: {str(e)}").send()
+
+async def display_system_status():
+    """Display the current system status."""
+    global agent_manager
     
-    # Step 6: Present Results
-    await present_research_results(context, research_report, email_pitch)
-
-async def present_research_results(context: ResearchContext, research_report: str, email_pitch: str):
-    """Present comprehensive research results to the sales team."""
+    if not agent_manager:
+        await cl.Message(content="❌ Agent Manager not initialized.").send()
+        return
     
-    # Create a comprehensive results message
-    results_content = f"""
-🎯 **LEAD RESEARCH COMPLETE**
-================================
+    status = agent_manager.get_system_status()
+    
+    status_message = f"""
+# 📊 **System Status Report**
 
-📋 **Lead Information**
-Company: {context.company_name}
-Contact: {context.person_name}
-Role: {context.person_role or 'Unknown'}
-Priority: {'⭐' * context.priority_level} ({context.priority_level}/5)
+## 🟢 **Overall Status**: {status['status'].upper()}
 
-🔄 **Handoff Strategy**
-Next Agent: {context.next_agent.value if context.next_agent else 'General'}
-Reason: {context.handoff_reason or 'Standard processing'}
-Approach: {context.communication_tone or 'Professional'}
-Timeline: {context.follow_up_timeline or '5-7 business days'}
+## 🤖 **Agent Status**:
+- **Total Agents**: {status['total_agents']}
+- **Active Agents**: {status['active_agents']}
+- **Queue Size**: {status['queue_size']}
+- **Processing**: {status['processing_requests']}
+- **Completed**: {status['completed_requests']}
 
-📊 **Research Summary**
-{research_report[:500]}{'...' if len(research_report) > 500 else ''}
-
-📧 **Email Pitch**
-{email_pitch[:300]}{'...' if len(email_pitch) > 300 else ''}
-
-🚀 **Next Steps**
-1. Review the complete research report
-2. Customize the email pitch for your style
-3. Follow up within the recommended timeline
-4. Track engagement and adjust approach
-
-💡 **Sales Intelligence Tips**
-• Contact type: {'Executive' if context.priority_level >= 4 else 'Technical' if context.priority_level >= 3 else 'General'}
-• Focus on: {context.communication_tone or 'Value propositions and ROI'}
-• Best timing: {context.follow_up_timeline or 'Within 5-7 business days'}
-
-🧪 **Beta Note:** This is a beta version. Please provide feedback on the research quality and suggestions!
-
-📝 **Feature Request?** [Submit new features here](https://forms.gle/D9uAUPtJR1gmoDCD7)
+## 📈 **Individual Agent Status**:
 """
     
-    await cl.Message(content=results_content).send()
+    for agent_id, agent_info in status['agents'].items():
+        health_emoji = "🟢" if agent_info['health_score'] > 80 else "🟡" if agent_info['health_score'] > 50 else "🔴"
+        status_message += f"- {health_emoji} **{agent_id}**: {agent_info['status']} (Health: {agent_info['health_score']:.1f}, Load: {agent_info['current_load']})\n"
     
-    # Send detailed reports as separate messages
-    if len(research_report) > 500:
-        await cl.Message(
-            content=f"📊 **Complete Research Report**\n\n{research_report}"
-        ).send()
-    
-    if len(email_pitch) > 300:
-        await cl.Message(
-            content=f"📧 **Complete Email Pitch**\n\n{email_pitch}"
-        ).send()
+    await cl.Message(content=status_message).send()
 
-async def handle_pitch_generation(message: cl.Message):
-    """Handle email pitch generation requests."""
+async def display_agent_metrics():
+    """Display detailed agent metrics."""
+    global agent_manager
     
-    await cl.Message(
-        content="📧 **Email Pitch Generation**\n\n"
-               "I'll help you create a personalized email pitch. Please provide:\n"
-               "• Company name and contact person\n"
-               "• Their role and any known pain points\n"
-               "• What specific value proposition you want to highlight\n\n"
-               "Or describe the prospect and I'll create a pitch for you."
-    ).send()
+    if not agent_manager:
+        await cl.Message(content="❌ Agent Manager not initialized.").send()
+        return
     
-    # Generate pitch using OpenAI
-    pitch_prompt = f"""
-    Create a compelling sales email pitch for this request:
-    "{message.content}"
+    metrics = agent_manager.get_all_metrics()
     
-    The pitch should be:
-    - Professional and personalized
-    - Focused on value and ROI
-    - Include a clear call-to-action
-    - Appropriate length (150-200 words)
-    - Written in a confident, consultative tone
-    """
+    metrics_message = "# 📊 **Agent Performance Metrics**\n\n"
     
+    for agent_id, agent_metrics in metrics.items():
+        if agent_metrics:
+            metrics_message += f"""
+## 🤖 **{agent_id}**
+- **Total Requests**: {agent_metrics['total_requests']}
+- **Success Rate**: {agent_metrics['success_rate']:.2%}
+- **Error Rate**: {agent_metrics['error_rate']:.2%}
+- **Avg Response Time**: {agent_metrics['average_response_time']:.2f}s
+- **Current Load**: {agent_metrics['current_load']}
+- **Health Score**: {agent_metrics['health_score']:.1f}
+- **Last Request**: {agent_metrics['last_request_time'] or 'Never'}
+
+"""
+    
+    await cl.Message(content=metrics_message).send()
+
+def extract_lead_information(user_input: str) -> Optional[Dict[str, str]]:
+    """Extract lead information from user input."""
     try:
-        response = await client.chat.completions.create(
-            messages=[
-                {"role": "system", "content": "You are an expert sales copywriter specializing in B2B data analytics services."},
-                {"role": "user", "content": pitch_prompt}
-            ],
-            **settings
-        )
+        lines = user_input.split('\n')
+        lead_info = {}
         
-        pitch = response.choices[0].message.content
+        for line in lines:
+            line = line.strip()
+            if ':' in line:
+                key, value = line.split(':', 1)
+                key = key.strip().lower()
+                value = value.strip()
+                
+                if key == 'company':
+                    lead_info['company_name'] = value
+                elif key == 'contact':
+                    lead_info['person_name'] = value
+                elif key == 'role':
+                    lead_info['person_role'] = value
+                elif key == 'email':
+                    lead_info['email'] = value
+                elif key == 'linkedin':
+                    lead_info['linkedin_url'] = value
+                elif key == 'phone':
+                    lead_info['phone'] = value
+                elif key == 'website':
+                    lead_info['website_url'] = value
         
-        await cl.Message(
-            content=f"📧 **Your Personalized Email Pitch**\n\n{pitch}\n\n"
-                   f"💡 **Tips for Success:**\n"
-                   f"• Customize the opening to reference recent company news\n"
-                   f"• Add specific metrics or case studies if available\n"
-                   f"• Follow up within 3-5 business days\n"
-                   f"• Track open rates and engagement\n\n"
-                   f"🧪 **Beta Feedback:** How was this pitch? Any suggestions for improvement?\n\n"
-                   f"📝 **Feature Request?** [Submit new features here](https://forms.gle/D9uAUPtJR1gmoDCD7)"
-        ).send()
+        # Add default values for missing fields
+        if 'company_name' in lead_info:
+            lead_info.setdefault('company_industry', 'Unknown')
+            lead_info.setdefault('company_size', 'Unknown')
+            lead_info.setdefault('company_location', 'Unknown')
+            lead_info.setdefault('person_role', 'Unknown')
+        
+        return lead_info if lead_info else None
         
     except Exception as e:
-        await cl.Message(
-            content=f"❌ **Pitch Generation Error**\n\n"
-                   f"Sorry, I couldn't generate a pitch: {str(e)}\n\n"
-                   f"Please try again or provide more specific details."
-        ).send()
+        print(f"Error extracting lead information: {e}")
+        return None
 
-async def handle_handoff_strategy(message: cl.Message):
-    """Handle handoff strategy requests."""
-    
-    await cl.Message(
-        content="🎯 **Handoff Strategy Analysis**\n\n"
-               "I'll help you determine the best approach for your contact. Please provide:\n"
-               "• Contact person's name and role\n"
-               "• Company name and industry\n"
-               "• Any known technical skills or decision-making power\n"
-               "• What you're trying to achieve\n\n"
-               "I'll analyze and recommend the optimal handoff strategy."
-    ).send()
-    
-    # Analyze handoff strategy using OpenAI
-    strategy_prompt = f"""
-    Analyze this contact for handoff strategy:
-    "{message.content}"
-    
-    Provide recommendations for:
-    1. Contact type classification (Executive/Technical/General)
-    2. Priority level (1-5 scale)
-    3. Best approach and communication tone
-    4. Recommended timeline for follow-up
-    5. Key value propositions to highlight
-    """
-    
+def extract_company_info_from_message(message: str) -> Optional[Dict[str, str]]:
+    """Extract company information from a message."""
     try:
-        response = await client.chat.completions.create(
-            messages=[
-                {"role": "system", "content": "You are a sales strategy expert specializing in lead qualification and handoff optimization."},
-                {"role": "user", "content": strategy_prompt}
-            ],
-            **settings
-        )
+        # Simple extraction for now
+        if "for:" in message.lower():
+            parts = message.split("for:")
+            if len(parts) > 1:
+                company_part = parts[1].strip()
+                if "in" in company_part:
+                    company_name, industry_part = company_part.split("in", 1)
+                    return {
+                        'company_name': company_name.strip(),
+                        'company_industry': industry_part.strip()
+                    }
         
-        strategy = response.choices[0].message.content
-        
-        await cl.Message(
-            content=f"🎯 **Handoff Strategy Analysis**\n\n{strategy}\n\n"
-                   f"💡 **Implementation Tips:**\n"
-                   f"• Use the recommended communication tone consistently\n"
-                   f"• Follow the suggested timeline for optimal engagement\n"
-                   f"• Focus on the highlighted value propositions\n"
-                   f"• Track results and adjust strategy based on response\n\n"
-                   f"🧪 **Beta Note:** How accurate was this strategy analysis? Any improvements needed?\n\n"
-                   f"📝 **Feature Request?** [Submit new features here](https://forms.gle/D9uAUPtJR1gmoDCD7)"
-        ).send()
+        return None
         
     except Exception as e:
-        await cl.Message(
-            content=f"❌ **Strategy Analysis Error**\n\n"
-                   f"Sorry, I couldn't analyze the strategy: {str(e)}\n\n"
-                   f"Please try again or provide more specific details."
-        ).send()
-
-async def handle_market_intelligence(message: cl.Message):
-    """Handle market intelligence requests."""
-    
-    await cl.Message(
-        content="📊 **Market Intelligence Request**\n\n"
-               "I'll help you with market insights. Please specify:\n"
-               "• Industry or sector you're interested in\n"
-               "• Specific market trends or competitive landscape\n"
-               "• Geographic region or market size\n"
-               "• What insights would be most valuable for your sales strategy\n\n"
-               "I'll provide market intelligence to help you position your services effectively."
-    ).send()
-    
-    # Generate market intelligence using OpenAI
-    market_prompt = f"""
-    Provide market intelligence for this sales team request:
-    "{message.content}"
-    
-    Include:
-    1. Current market trends and opportunities
-    2. Competitive landscape analysis
-    3. Key challenges and pain points in the market
-    4. Sales positioning recommendations
-    5. Market timing and seasonal factors
-    """
-    
-    try:
-        response = await client.chat.completions.create(
-            messages=[
-                {"role": "system", "content": "You are a market intelligence expert specializing in B2B data analytics and technology services."},
-                {"role": "user", "content": market_prompt}
-            ],
-            **settings
-        )
-        
-        intelligence = response.choices[0].message.content
-        
-        await cl.Message(
-            content=f"📊 **Market Intelligence Report**\n\n{intelligence}\n\n"
-                   f"💡 **Sales Strategy Recommendations:**\n"
-                   f"• Use these insights to refine your value proposition\n"
-                   f"• Position your services against current market challenges\n"
-                   f"• Leverage timing and seasonal factors in your outreach\n"
-                   f"• Monitor these trends for ongoing strategy adjustments\n\n"
-                   f"🧪 **Beta Feedback:** How valuable were these market insights? Any specific areas you'd like me to focus on?\n\n"
-                   f"📝 **Feature Request?** [Submit new features here](https://forms.gle/D9uAUPtJR1gmoDCD7)"
-        ).send()
-        
-    except Exception as e:
-        await cl.Message(
-            content=f"❌ **Market Intelligence Error**\n\n"
-                   f"Sorry, I couldn't generate market intelligence: {str(e)}\n\n"
-                   f"Please try again or provide more specific details."
-        ).send()
-
-async def handle_general_sales_assistance(message: cl.Message):
-    """Handle general sales assistance requests."""
-    
-    # Use OpenAI to provide general sales assistance
-    assistance_prompt = f"""
-    You are an AI Sales Intelligence Assistant. Help the sales team with this request:
-    "{message.content}"
-    
-    Provide helpful, actionable advice for:
-    - Sales strategy and tactics
-    - Lead qualification and research
-    - Communication and outreach
-    - Market positioning and competitive analysis
-    - Sales process optimization
-    
-    Keep responses practical and sales-focused.
-    """
-    
-    try:
-        response = await client.chat.completions.create(
-            messages=[
-                {"role": "system", "content": "You are an expert sales consultant and coach specializing in B2B technology sales."},
-                {"role": "user", "content": assistance_prompt}
-            ],
-            **settings
-        )
-        
-        assistance = response.choices[0].message.content
-        
-        await cl.Message(
-            content=f"💡 **Sales Intelligence Assistant**\n\n{assistance}\n\n"
-                   f"🔍 **Need More Specific Help?**\n"
-                   f"• Lead research: 'Research [Company] and [Contact]'\n"
-                   f"• Email pitches: 'Create a pitch for [Role] at [Company]'\n"
-                   f"• Handoff strategy: 'What's the best approach for [Contact Type]?'\n"
-                   f"• Market insights: 'Tell me about [Industry] market trends'\n\n"
-                   f"🧪 **Beta Note:** How helpful was this assistance? Any specific areas you'd like me to improve?\n\n"
-                   f"📝 **Feature Request?** [Submit new features here](https://forms.gle/D9uAUPtJR1gmoDCD7)"
-        ).send()
-        
-    except Exception as e:
-        await cl.Message(
-            content=f"❌ **Assistance Error**\n\n"
-                   f"Sorry, I couldn't provide assistance: {str(e)}\n\n"
-                   f"Please try rephrasing your request or ask for specific help with lead research, pitch generation, or market intelligence."
-        ).send()
+        print(f"Error extracting company info: {e}")
+        return None
 
 @cl.on_chat_end
 async def on_chat_end():
-    """Handle chat session end."""
-    await cl.Message(
-        content="👋 **Sales Intelligence Session Ended**\n\n"
-               "Thank you for using the Sales Intelligence Assistant!\n\n"
-               "**Session Summary:**\n"
-               "• Lead research and analysis completed\n"
-               "• Handoff strategies determined\n"
-               "• Email pitches generated\n"
-               "• Market intelligence provided\n\n"
-               "**Next Steps:**\n"
-               "• Follow up on researched leads within recommended timelines\n"
-               "• Customize generated pitches for your style\n"
-               "• Implement suggested sales strategies\n"
-               "• Track results and adjust approaches\n\n"
-               "🧪 **Beta Feedback Request:**\n"
-               "• How was your experience with the tool?\n"
-               "• What features would you like to see improved?\n"
-               "• Any bugs or issues you encountered?\n"
-               "• Suggestions for new capabilities?\n\n"
-               "📝 **Feature Request Form:** [Submit new features here](https://forms.gle/D9uAUPtJR1gmoDCD7)\n\n"
-               "🚀 Happy selling! Come back anytime for more intelligence support."
-    ).send()
+    """Clean up when chat ends."""
+    global agent_manager
+    
+    if agent_manager:
+        # Note: Don't shutdown the manager here as it's shared across sessions
+        print("Chat session ended, Agent Manager remains active for other sessions")
 
 if __name__ == "__main__":
-    print("🚀 Sales Intelligence Assistant - BETA VERSION 🧪")
-    print("⚠️  This is a beta version of the tool. Features may evolve and improve over time.")
-    print("💡 This app provides conversational AI assistance to your sales team")
-    print("🔍 Features: Lead research, handoff analysis, pitch generation, market intelligence")
-    print("📱 Run with: chainlit run app.py -w")
-    print("💬 Beta Feedback: We'd love to hear your experience and suggestions!")
+    print("🚀 Starting Deep Research System with Agent Manager...")
+    print("✅ Agent Manager integration ready!")
+    print("💡 Use 'chainlit run app_with_agent_manager.py -w' to start the app")

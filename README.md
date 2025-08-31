@@ -58,8 +58,60 @@ The system consists of **two versions** - a standard sequential system and an ad
 - **Executive Specialist** - Handles C-suite and high-level contacts
 - **Technical Specialist** - Manages technical contacts and engineers
 - **Tavily Research Agent** - Real-time web intelligence and market research
+- **Industry Problems Agent** - Identifies potential business challenges and pain points
+- **Solutions Research Agent** - Researches AI and data analytics solutions
 - **Context Preservation** - Maintains information between agents
 - **Dynamic Routing** - Adapts strategy based on lead characteristics
+
+## 🎯 **New Specialized Agents**
+
+### **Industry Problems Agent**
+- **Purpose**: Identifies potential industry problems, challenges, and pain points that leads may face
+- **Capabilities**:
+  - Industry-specific problem frameworks (Environmental Services, Technology, Manufacturing)
+  - AI-enhanced problem identification
+  - Business impact analysis
+  - Stakeholder and market size assessment
+- **Use Cases**: Lead qualification, value proposition development, sales strategy planning
+
+### **Solutions Research Agent**
+- **Purpose**: Researches and identifies AI and data analytics solutions for identified industry problems
+- **Capabilities**:
+  - Problem-to-solution mapping
+  - Technology stack recommendations
+  - Implementation timeline estimates
+  - ROI and cost analysis
+  - Industry-specific solution customization
+- **Use Cases**: Solution development, proposal creation, technical sales support
+
+## 🏗️ **Agent Manager - Centralized Orchestration** ✅ **INTEGRATED**
+
+### **Purpose**
+The Agent Manager provides centralized orchestration and management for all agents in the system, addressing the critical gaps identified in the codebase analysis. **Now fully integrated into your main `app.py`!**
+
+### **Key Features**
+- **Centralized Agent Management**: Register, start, stop, and monitor all agents
+- **Intelligent Request Routing**: Automatic agent selection based on capabilities and health
+- **Load Balancing**: Distribute requests across available agents
+- **Health Monitoring**: Real-time agent health checks and failure detection
+- **Performance Metrics**: Track response times, success rates, and error rates
+- **Request Queue Management**: Priority-based request processing
+- **Async Processing**: Non-blocking request handling with background processing
+
+### **Architecture Components**
+- **Agent Manager**: Core orchestration engine
+- **Agent Adapters**: Compatibility layer for existing agents
+- **Request Queue**: Priority-based request management
+- **Health Monitor**: Background health checking
+- **Metrics Collector**: Performance data collection
+- **Configuration Management**: YAML-based configuration
+
+### **Benefits**
+- **Scalability**: Easy to add new agents and scale existing ones
+- **Reliability**: Automatic failure detection and recovery
+- **Performance**: Load balancing and concurrent processing
+- **Monitoring**: Real-time system status and metrics
+- **Maintainability**: Centralized configuration and management
 
 ## 🔄 **High-Level System Architecture Diagram**
 
@@ -381,6 +433,12 @@ deepsearch_project/
 ├── deep_research_system.py              # Standard sequential system
 ├── deep_research_system_handoffs.py     # Advanced handoff-enabled system
 ├── research_agent_tavily.py            # 🆕 Tavily research agent
+├── research_agent_industry_problems.py  # 🆕 Industry problems identification agent
+├── research_agent_solutions.py          # 🆕 AI solutions research agent
+├── agent_manager.py                     # 🆕 Centralized agent orchestration
+├── agent_adapters.py                    # 🆕 Agent compatibility layer
+├── agent_manager_config.yaml            # 🆕 Configuration file
+├── app.py                               # 🆕 Updated with Agent Manager integration
 ├── research_agent_website.py           # Website research agent
 ├── research_agent_linkedin.py          # LinkedIn research agent
 ├── research_agent_email.py             # Email generation agent
@@ -416,12 +474,32 @@ deepsearch_project/
 - **Opportunity Analysis** - Immediate and strategic opportunities with timing
 - **Integration Ready** - Seamlessly enhances existing handoff system
 
+### **Industry Problems & Solutions Analysis**
+- **Problem Identification** - Industry-specific challenges and pain points
+- **Solution Mapping** - AI and data analytics solutions for identified problems
+- **Business Impact Analysis** - Quantified impact and urgency assessment
+- **ROI Estimation** - Implementation costs and return on investment
+- **Industry Customization** - Tailored solutions for specific sectors
+
 ### **Professional Output Generation**
 - **Pain point analysis** from company research
 - **Role-specific benefits** and value propositions
 - **Professional tone** and structure
 - **Compelling calls-to-action**
 - **Executive-level communication** for C-suite contacts
+
+## 🔄 **Enhanced Research Workflow**
+
+### **9-Step Comprehensive Research Process**
+1. **Website Analysis** - Company website research and business intelligence
+2. **LinkedIn Research** - Professional profile analysis and background
+3. **Tavily Intelligence** - Real-time web intelligence and market data
+4. **Industry Problems** - Identification of business challenges and pain points
+5. **AI Solutions Research** - Data analytics and AI solution recommendations
+6. **Handoff Strategy** - Intelligent routing and communication approach
+7. **Research Report** - Comprehensive analysis compilation
+8. **Email Pitch** - Personalized outreach generation
+9. **Results Presentation** - Complete research package delivery
 
 ## 🎯 **Agent Specializations**
 
@@ -472,6 +550,17 @@ uv run test_handoff_structure.py
 
 # Test Tavily integration
 uv run test_handoff_tavily_integration.py
+
+# Test new agents
+uv run python research_agent_industry_problems.py
+uv run python research_agent_solutions.py
+
+# Test Agent Manager
+uv run python test_agent_manager.py
+uv run python demo_agent_manager.py
+
+# Test Integration
+uv run python app.py
 
 # Test with specific leads
 uv run test_christian_lead.py
