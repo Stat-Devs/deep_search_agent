@@ -624,9 +624,9 @@ This project is designed for business use in lead research and outreach. Please 
 
 # Deep Research System - Agentic AI for Lead Research
 
-## 🚀 **Public Deployment Instructions**
+## 🚀 **Deployment Instructions**
 
-### **Deploy with Docker (Recommended)**
+### **🐳 Deploy with Docker (Recommended)**
 
 1. **Ensure Docker is Running:**
    - Start Docker Desktop on your machine
@@ -654,18 +654,36 @@ This project is designed for business use in lead research and outreach. Please 
    - Open browser to: `http://localhost:8000`
    - Your StatDevs Sales Intelligence System is now running!
 
-### **Alternative Docker Commands**
+### **🔧 Docker Management Commands**
 
-If you prefer manual Docker commands:
-
+#### **Using Docker Compose (Recommended)**
 ```bash
-# Build the image
+# Start the service
+docker-compose up -d
+
+# View logs
+docker-compose logs -f
+
+# Stop the service
+docker-compose down
+
+# Restart the service
+docker-compose restart
+
+# Update and restart
+docker-compose up --build -d
+
+# Check status
+docker-compose ps
+```
+
+#### **Using Docker Directly**
+```bash
+# Build image
 docker build -t statdevs-sales-ai .
 
-# Run the container
-docker run -d \
-  --name statdevs-sales-ai \
-  -p 8000:8000 \
+# Run container
+docker run -d --name statdevs-sales-ai -p 8000:8000 \
   -e OPENAI_API_KEY=your_api_key \
   -e OPENAI_TRACE=1 \
   statdevs-sales-ai
@@ -673,35 +691,39 @@ docker run -d \
 # View logs
 docker logs -f statdevs-sales-ai
 
-# Stop and remove
-docker stop statdevs-sales-ai && docker rm statdevs-sales-ai
+# Stop container
+docker stop statdevs-sales-ai
+
+# Remove container
+docker rm statdevs-sales-ai
 ```
 
+### **🚀 Alternative Deployment Options**
 
+#### **Railway**
+```bash
+# Install Railway CLI
+npm install -g @railway/cli
 
-### **Deploy on Heroku**
+# Create project and deploy
+railway login
+railway init
+railway variables set OPENAI_API_KEY=your_key
+railway variables set OPENAI_TRACE=1
+railway up
+```
 
-1. **Install Heroku CLI:**
-   ```bash
-   # macOS
-   brew install heroku/brew/heroku
-   ```
+#### **Heroku**
+```bash
+# Install Heroku CLI
+brew install heroku/brew/heroku
 
-2. **Create Heroku app:**
-   ```bash
-   heroku create your-app-name
-   ```
-
-3. **Set environment variables:**
-   ```bash
-   heroku config:set OPENAI_API_KEY=your_key
-   heroku config:set OPENAI_TRACE=1
-   ```
-
-4. **Deploy:**
-   ```bash
-   git push heroku main
-   ```
+# Create app and deploy
+heroku create your-app-name
+heroku config:set OPENAI_API_KEY=your_key
+heroku config:set OPENAI_TRACE=1
+git push heroku main
+```
 
 ## 🔧 **Environment Setup for Deployment**
 
@@ -730,6 +752,92 @@ docker-compose ps
 Create a `requirements.txt` file for deployment:
 ```bash
 uv export --format requirements-txt --output-file requirements.txt
+```
+
+## 🚨 **Docker Troubleshooting**
+
+### **Common Issues & Solutions**
+
+#### **Port Already in Use**
+```bash
+# Check what's using port 8000
+lsof -i :8000
+
+# Kill the process
+kill -9 <PID>
+
+# Or use a different port
+docker run -p 8001:8000 statdevs-sales-ai
+```
+
+#### **Container Won't Start**
+```bash
+# Check container logs
+docker logs statdevs-sales-ai
+
+# Check container status
+docker ps -a
+
+# Remove and recreate
+docker rm statdevs-sales-ai
+docker run -d --name statdevs-sales-ai -p 8000:8000 \
+  -e OPENAI_API_KEY=your_api_key \
+  statdevs-sales-ai
+```
+
+#### **Environment Variables Not Working**
+```bash
+# Verify environment variables
+docker exec statdevs-sales-ai env | grep OPENAI
+
+# Restart with correct environment
+docker stop statdevs-sales-ai
+docker rm statdevs-sales-ai
+docker run -d --name statdevs-sales-ai -p 8000:8000 \
+  -e OPENAI_API_KEY=your_actual_key \
+  -e OPENAI_TRACE=1 \
+  statdevs-sales-ai
+```
+
+## 🌐 **Production Deployment**
+
+### **Cloud Deployment Options**
+
+#### **AWS ECS/Fargate**
+```bash
+# Build and push to ECR
+aws ecr get-login-password --region us-east-1 | docker login --username AWS --password-stdin <account>.dkr.ecr.us-east-1.amazonaws.com
+docker tag statdevs-sales-ai:latest <account>.dkr.ecr.us-east-1.amazonaws.com/statdevs-sales-ai:latest
+docker push <account>.dkr.ecr.us-east-1.amazonaws.com/statdevs-sales-ai:latest
+```
+
+#### **Google Cloud Run**
+```bash
+# Build and push to GCR
+docker tag statdevs-sales-ai:latest gcr.io/<project-id>/statdevs-sales-ai:latest
+docker push gcr.io/<project-id>/statdevs-sales-ai:latest
+
+# Deploy to Cloud Run
+gcloud run deploy statdevs-sales-ai \
+  --image gcr.io/<project-id>/statdevs-sales-ai:latest \
+  --platform managed \
+  --region us-central1 \
+  --allow-unauthenticated \
+  --port 8000
+```
+
+#### **Azure Container Instances**
+```bash
+# Build and push to ACR
+az acr build --registry <registry-name> --image statdevs-sales-ai:latest .
+
+# Deploy to Container Instances
+az container create \
+  --resource-group <resource-group> \
+  --name statdevs-sales-ai \
+  --image <registry-name>.azurecr.io/statdevs-sales-ai:latest \
+  --ports 8000 \
+  --environment-variables OPENAI_API_KEY=your_key OPENAI_TRACE=1
 ```
 
 ## 📱 **Public Access**
