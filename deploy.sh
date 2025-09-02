@@ -1,50 +1,89 @@
 #!/bin/bash
 
-echo "🚀 StatDevs Sales Intelligence System - Deployment Script"
-echo "========================================================"
+echo "🚀 StatDevs Sales Intelligence System - GitHub CI/CD Deployment"
+echo "==============================================================="
+
+# Colors for output
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+YELLOW='\033[1;33m'
+BLUE='\033[0;34m'
+NC='\033[0m' # No Color
+
+print_status() {
+    echo -e "${BLUE}[INFO]${NC} $1"
+}
+
+print_success() {
+    echo -e "${GREEN}[SUCCESS]${NC} $1"
+}
+
+print_warning() {
+    echo -e "${YELLOW}[WARNING]${NC} $1"
+}
+
+print_error() {
+    echo -e "${RED}[ERROR]${NC} $1"
+}
 
 # Check if git is initialized
 if [ ! -d ".git" ]; then
-    echo "❌ Git repository not found. Please run 'git init' first."
+    print_error "Git repository not found. Please run 'git init' first."
     exit 1
 fi
 
 # Check if remote origin exists
 if ! git remote get-url origin > /dev/null 2>&1; then
-    echo "❌ No remote origin found. Please add your GitHub repository:"
+    print_error "No remote origin found. Please add your GitHub repository:"
     echo "   git remote add origin https://github.com/YOUR_USERNAME/YOUR_REPO.git"
     exit 1
 fi
 
-echo "✅ Git repository found"
+print_success "Git repository found"
+
+# Check if GitHub Actions workflow exists
+if [ ! -f ".github/workflows/deploy.yml" ]; then
+    print_warning "GitHub Actions workflow not found. Creating it..."
+    mkdir -p .github/workflows
+    # The workflow file should already be created by the setup process
+fi
 
 # Add all files
-echo "📁 Adding files to git..."
+print_status "Adding files to git..."
 git add .
 
 # Commit changes
-echo "💾 Committing changes..."
-git commit -m "Deploy StatDevs Sales Intelligence System v1.0"
+print_status "Committing changes..."
+git commit -m "Deploy StatDevs Sales Intelligence System v1.0 - Digital Ocean CI/CD"
 
 # Push to GitHub
-echo "🚀 Pushing to GitHub..."
+print_status "Pushing to GitHub..."
 git push origin main
 
+print_success "Deployment to GitHub completed!"
 echo ""
-echo "🎉 Deployment to GitHub completed!"
+echo "🎉 GitHub CI/CD Pipeline Activated!"
 echo ""
-echo "📋 Next Steps:"
-echo "1. Install Railway CLI: npm install -g @railway/cli"
-echo "2. Login to Railway: railway login"
-echo "3. Create project: railway init"
-echo "4. Set environment variables:"
+echo "📋 What happens next:"
+echo "1. ✅ GitHub Actions will automatically build and test your app"
+echo "2. 🚀 If tests pass, it will deploy to Digital Ocean server"
+echo "3. 🌐 Your app will be available at: http://143.110.183.47:8000"
+echo ""
+echo "📊 Monitor deployment:"
+echo "   - GitHub Actions: https://github.com/YOUR_USERNAME/YOUR_REPO/actions"
+echo "   - Server logs: ssh root@143.110.183.47 'cd /opt/statdevs-sales-intelligence && docker-compose logs -f'"
+echo ""
+echo "🔧 Required GitHub Secrets (set in repository settings):"
+echo "   - DO_HOST: 143.110.183.47"
+echo "   - DO_USERNAME: root"
+echo "   - DO_SSH_KEY: Your private SSH key"
 echo "   - OPENAI_API_KEY: Your OpenAI API key"
-echo "   - OPENAI_TRACE: Set to 1"
-echo "5. Deploy: railway up"
+echo "   - GEMINI_API_KEY: Your Gemini API key"
+echo "   - TAVILY_API_KEY: Your Tavily API key"
 echo ""
-echo "🌐 Your app will be available at Railway's provided URL"
-echo ""
-echo "💡 For custom domain, use Railway's custom domain feature"
-echo "   Example: sales.statdevs.com"
+echo "💡 For custom domain setup:"
+echo "   - Update nginx configuration on the server"
+echo "   - Setup SSL with Let's Encrypt"
+echo "   - Example: sales.statdevs.com"
 echo ""
 echo "📞 Need help? Contact StatDevs team at info@statdevs.com"

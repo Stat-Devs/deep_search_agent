@@ -43,6 +43,63 @@ uv run demo_tavily_handoff.py
 uv run test_system.py
 ```
 
+## 🌐 Deployment to Digital Ocean
+
+### Automated CI/CD Deployment
+
+The system includes a complete GitHub Actions CI/CD pipeline for automated deployment to Digital Ocean.
+
+#### Quick Deployment Setup
+
+1. **Setup Digital Ocean Server** (One-time):
+   ```bash
+   ./setup-digitalocean.sh
+   ```
+
+2. **Configure GitHub Secrets**:
+   ```bash
+   ./setup-github-secrets.sh
+   ```
+
+3. **Deploy via GitHub Actions**:
+   ```bash
+   ./deploy.sh
+   ```
+
+#### Manual Deployment
+
+For manual deployment to Digital Ocean:
+```bash
+# Set environment variables
+export OPENAI_API_KEY="your_key_here"
+export GEMINI_API_KEY="your_key_here"
+export TAVILY_API_KEY="your_key_here"
+
+# Deploy to Digital Ocean
+./deploy-digitalocean.sh
+```
+
+#### Access Your Application
+
+After deployment, your application will be available at:
+- **Production URL**: http://143.110.183.47:8000
+- **GitHub Actions**: Monitor deployments in your repository's Actions tab
+
+#### Required GitHub Secrets
+
+Configure these secrets in your GitHub repository settings:
+
+| Secret Name | Value | Description |
+|-------------|-------|-------------|
+| `DO_HOST` | `143.110.183.47` | Digital Ocean server IP |
+| `DO_USERNAME` | `root` | Server username |
+| `DO_SSH_KEY` | `[Your private SSH key]` | Private SSH key for server access |
+| `OPENAI_API_KEY` | `[Your OpenAI API key]` | OpenAI API key |
+| `GEMINI_API_KEY` | `[Your Gemini API key]` | Google Gemini API key |
+| `TAVILY_API_KEY` | `[Your Tavily API key]` | Tavily API key |
+
+For detailed deployment instructions, see [DEPLOYMENT_GUIDE.md](DEPLOYMENT_GUIDE.md).
+
 ## 🏗️ System Architecture
 
 The system consists of **two versions** - a standard sequential system and an advanced handoff-enabled system with Tavily integration:
