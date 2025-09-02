@@ -24,6 +24,53 @@ llm_model = OpenAIChatCompletionsModel(
     openai_client=openai_client
 )
 
+class LinkedInResearchAgent:
+    """Agent for analyzing LinkedIn profiles and extracting professional intelligence."""
+    
+    def __init__(self):
+        self.agent = Agent(
+            name="LinkedIn Research Agent",
+            instructions="""You are a specialized agent for analyzing LinkedIn profiles and extracting professional intelligence. 
+            Your role is to:
+            1. Extract professional role and title information
+            2. Analyze experience level and career progression
+            3. Identify technical skills and expertise
+            4. Assess decision-making authority and influence
+            5. Provide insights for personalized outreach
+            
+            Always provide structured, professional analysis with specific recommendations for sales engagement.""",
+            model=llm_model,
+            tools=[extract_professional_role, analyze_experience_level, identify_technical_skills]
+        )
+    
+    async def analyze_linkedin_profile(self, person_name: str, company_name: str, linkedin_url: str = None) -> str:
+        """Analyze a LinkedIn profile and provide comprehensive professional intelligence."""
+        try:
+            prompt = f"""
+            Analyze the LinkedIn profile for {person_name} at {company_name}.
+            
+            Please provide a comprehensive analysis including:
+            1. Current role and responsibilities
+            2. Experience level and career progression
+            3. Technical skills and expertise
+            4. Decision-making authority and influence
+            5. Professional background and achievements
+            6. Sales engagement recommendations
+            
+            Focus on identifying how data analytics solutions could benefit this person in their role.
+            """
+            
+            result = await Runner.run(self.agent, prompt)
+            return result.final_output
+            
+        except Exception as e:
+            return f"Error analyzing LinkedIn profile: {str(e)}"
+    
+    def analyze_linkedin_profile_sync(self, person_name: str, company_name: str, linkedin_url: str = None) -> str:
+        """Synchronous version of LinkedIn profile analysis."""
+        import asyncio
+        return asyncio.run(self.analyze_linkedin_profile(person_name, company_name, linkedin_url))
+
 @function_tool
 def extract_professional_role(profile_text: str) -> str:
     """Extract the person's current professional role and title from LinkedIn profile."""

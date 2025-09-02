@@ -24,6 +24,55 @@ llm_model = OpenAIChatCompletionsModel(
     openai_client=openai_client
 )
 
+class EmailGenerationAgent:
+    """Agent for generating personalized email pitches based on research findings."""
+    
+    def __init__(self):
+        self.agent = Agent(
+            name="Email Generation Agent",
+            instructions="""You are a specialized agent for generating personalized email pitches based on research findings. 
+            Your role is to:
+            1. Analyze company research and pain points
+            2. Identify solution benefits for the specific person and company
+            3. Craft personalized greetings and value propositions
+            4. Generate compelling email content with clear calls to action
+            5. Ensure professional tone and sales effectiveness
+            
+            Always create emails that are personalized, relevant, and actionable.""",
+            model=llm_model,
+            tools=[analyze_company_pain_points, identify_solution_benefits, craft_personalized_greeting, generate_value_proposition]
+        )
+    
+    async def generate_email_pitch(self, person_name: str, company_name: str, research_summary: str) -> str:
+        """Generate a personalized email pitch based on research findings."""
+        try:
+            prompt = f"""
+            Generate a personalized email pitch for {person_name} at {company_name}.
+            
+            Research Summary:
+            {research_summary}
+            
+            Please create a compelling email that includes:
+            1. Personalized greeting
+            2. Value proposition based on research
+            3. Specific benefits for their role and company
+            4. Clear call to action
+            5. Professional closing
+            
+            Make it concise, relevant, and actionable.
+            """
+            
+            result = await Runner.run(self.agent, prompt)
+            return result.final_output
+            
+        except Exception as e:
+            return f"Error generating email pitch: {str(e)}"
+    
+    def generate_email_pitch_sync(self, person_name: str, company_name: str, research_summary: str) -> str:
+        """Synchronous version of email pitch generation."""
+        import asyncio
+        return asyncio.run(self.generate_email_pitch(person_name, company_name, research_summary))
+
 @function_tool
 def analyze_company_pain_points(website_research: str) -> str:
     """Analyze company research to identify specific pain points and challenges."""

@@ -26,6 +26,53 @@ llm_model = OpenAIChatCompletionsModel(
     openai_client=openai_client
 )
 
+class WebsiteResearchAgent:
+    """Agent for analyzing company websites and extracting business intelligence."""
+    
+    def __init__(self):
+        self.agent = Agent(
+            name="Website Research Agent",
+            instructions="""You are a specialized agent for analyzing company websites and extracting business intelligence. 
+            Your role is to:
+            1. Scrape and analyze website content
+            2. Identify company services and business focus
+            3. Extract key company metrics and indicators
+            4. Identify potential data analytics needs
+            5. Provide actionable insights for sales opportunities
+            
+            Always provide structured, professional analysis with specific recommendations.""",
+            model=llm_model,
+            tools=[scrape_website_content, analyze_company_services, identify_company_needs, extract_company_metrics]
+        )
+    
+    async def analyze_company_website(self, company_name: str, website_url: str) -> str:
+        """Analyze a company website and provide comprehensive business intelligence."""
+        try:
+            prompt = f"""
+            Analyze the website for {company_name} at {website_url}.
+            
+            Please provide a comprehensive analysis including:
+            1. Company overview and business focus
+            2. Key services and offerings
+            3. Company size and scale indicators
+            4. Industry positioning
+            5. Potential data analytics needs and opportunities
+            6. Sales intelligence insights
+            
+            Focus on identifying how data analytics solutions could benefit this company.
+            """
+            
+            result = await Runner.run(self.agent, prompt)
+            return result.final_output
+            
+        except Exception as e:
+            return f"Error analyzing website: {str(e)}"
+    
+    def analyze_company_website_sync(self, company_name: str, website_url: str) -> str:
+        """Synchronous version of website analysis."""
+        import asyncio
+        return asyncio.run(self.analyze_company_website(company_name, website_url))
+
 @function_tool
 def scrape_website_content(url: str) -> str:
     """Scrape and extract content from a company website."""

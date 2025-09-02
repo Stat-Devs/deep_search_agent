@@ -3,6 +3,7 @@ Deep Research System with Agent Manager
 
 This file integrates the Agent Manager with existing
 Chainlit application to provide centralized agent orchestration.
+Enhanced with comprehensive tracing using Agents SDK and full agent orchestration.
 """
 
 import os
@@ -10,15 +11,27 @@ import asyncio
 from typing import Dict, List, Any, Optional
 import chainlit as cl
 from openai import AsyncOpenAI
-from agents import Runner
+from agents import Runner, Agent, AsyncOpenAI as AgentsAsyncOpenAI, OpenAIChatCompletionsModel, trace, function_tool, custom_span
 from dotenv import load_dotenv
+import json
+import uuid
+from datetime import datetime
+
+# Import the full agent management system
+from agent_manager import get_agent_manager, initialize_agent_manager, RequestPriority
+from agent_adapters import register_all_agents
+from deep_research_system_handoffs import ResearchContext, AgentType
 
 # Load environment variables
 load_dotenv()
 
-# Enable OpenAI tracing (using environment variable)
-# Set OPENAI_TRACE=1 in .env file to enable tracing
+# Enhanced OpenAI tracing setup
+# Tracing is enabled by default in Agents SDK
 # Traces will be available at: https://platform.openai.com/logs?api=traces
+print("🔍 Tracing enabled for Sales Deep Search System with Full Agent Orchestration")
+print("📊 Traces available at: https://platform.openai.com/logs?api=traces")
+print("🤖 Agent Manager: Centralized orchestration with intelligent handoffs")
+print("🔗 Agents: Website, LinkedIn, Tavily, Industry, Solutions, Reports, Email")
 
 # StatDevs Business Context for Sales Intelligence
 STATDEVS_CONTEXT = {
@@ -44,134 +57,363 @@ STATDEVS_CONTEXT = {
     "process": ["Discovery Call", "Assessment", "Solution Design", "Phased Implementation"]
 }
 
-# Initialize OpenAI client
+# Initialize OpenAI clients with proper configuration for tracing
+openai_api_key = os.getenv("OPENAI_API_KEY")
+gemini_api_key = os.getenv("GEMINI_API_KEY")
+tavily_api_key = os.getenv("TAVILY_API_KEY")
+
+if not openai_api_key:
+    raise ValueError("OPENAI_API_KEY not found in environment variables")
+if not gemini_api_key:
+    raise ValueError("GEMINI_API_KEY not found in environment variables")
+if not tavily_api_key:
+    raise ValueError("TAVILY_API_KEY not found in environment variables")
+
+# Standard OpenAI client for legacy functions
 client = AsyncOpenAI(
-    api_key=os.getenv("OPENAI_API_KEY"),
+    api_key=openai_api_key,
     base_url="https://api.openai.com/v1"
 )
 
-# Lead research functions
+# Agents SDK OpenAI client for tracing
+agents_openai_client = AgentsAsyncOpenAI(
+    api_key=openai_api_key,
+    base_url="https://api.openai.com/v1"
+)
+
+# Agents SDK Gemini client for tracing
+agents_gemini_client = AgentsAsyncOpenAI(
+    api_key=gemini_api_key,
+    base_url="https://generativelanguage.googleapis.com/v1beta/openai/"
+)
+
+# Model configurations for tracing
+openai_model = OpenAIChatCompletionsModel(
+    model="gpt-4",
+    openai_client=agents_openai_client
+)
+
+gemini_model = OpenAIChatCompletionsModel(
+    model="gemini-2.5-flash", 
+    openai_client=agents_gemini_client
+)
+
+# Initialize Agent Manager with full orchestration
+agent_manager = None
+
+async def get_agent_manager():
+    """Get the global agent manager instance, initializing if necessary."""
+    global agent_manager
+    if agent_manager is None:
+        agent_manager = await initialize_agent_manager()
+        await register_all_agents(agent_manager)
+    return agent_manager
+
+# Function tools for tracing-enabled research
+@function_tool
+async def website_analysis_tool(company_name: str, website_url: str) -> str:
+    """Analyze company website for StatDevs sales opportunities with full tracing."""
+    analysis_prompt = f"""Analyze {company_name} at {website_url} and identify:
+
+1. **Business Model & Current State**: What do they do and where are they in their data journey?
+2. **StatDevs Opportunity Areas**: Which of our services (Data Engineering, Data Science/ML, AI, BI) would benefit them most?
+3. **Specific Pain Points**: What data challenges do they likely face?
+4. **ROI Potential**: How can our solutions deliver measurable value?
+5. **Sales Approach**: What specific StatDevs capabilities should we highlight?
+
+Format as a sales-ready analysis with clear StatDevs service recommendations."""
+    
+    return analysis_prompt
+
+@function_tool
+async def industry_problems_tool(company_industry: str, company_size: str, person_role: str) -> str:
+    """Identify industry-specific problems and map to StatDevs solutions."""
+    problems_prompt = f"""Analyze {company_industry} industry challenges for a {company_size} company with {person_role} contact. Identify:
+
+1. **Industry-Specific Problems**: What challenges do {company_industry} companies face?
+2. **StatDevs Solution Mapping**: How do our services solve these problems?
+3. **ROI Quantification**: Use our proven metrics to show value
+4. **Implementation Approach**: How would our phased process work for them?
+
+Format as StatDevs sales intelligence with clear service recommendations."""
+    
+    return problems_prompt
+
+@function_tool
+async def ai_solutions_tool(industry_problems: str, company_industry: str, company_size: str) -> str:
+    """Research StatDevs AI and data analytics solutions for identified problems."""
+    solutions_prompt = f"""Recommend StatDevs solutions for these problems:
+{industry_problems}
+
+Company: {company_size} in {company_industry}
+
+Provide:
+1. **StatDevs Service Recommendations**: Which of our 4 core services fit best?
+2. **Technology Stack**: Use our expertise in Python, R, AWS, ML
+3. **Implementation Benefits**: Reference our proven metrics
+4. **ROI Potential**: Use our track record of 3.2x return
+5. **Implementation Process**: Follow our Discovery → Assessment → Design → Implementation approach
+
+Format as StatDevs sales proposal with clear next steps."""
+    
+    return solutions_prompt
+
+# Create Agents with proper tracing
+website_analyst_agent = Agent(
+    name="StatDevs_Website_Analyst",
+    instructions=f"""You are a StatDevs sales intelligence analyst. Your goal is to identify how {STATDEVS_CONTEXT['company_name']} can help companies with data solutions. 
+
+Focus on StatDevs' core services: {', '.join(STATDEVS_CONTEXT['services'].keys())}. 
+
+Use specific value propositions:
+- {STATDEVS_CONTEXT['value_propositions'][0]}
+- {STATDEVS_CONTEXT['value_propositions'][1]}
+- {STATDEVS_CONTEXT['value_propositions'][2]}
+
+Always provide sales-ready analysis with clear StatDevs service recommendations.""",
+    model=gemini_model,
+    tools=[website_analysis_tool]
+)
+
+industry_analyst_agent = Agent(
+    name="StatDevs_Industry_Analyst", 
+    instructions=f"""You are a StatDevs industry analyst. Map industry problems to StatDevs solutions using proven metrics:
+- {STATDEVS_CONTEXT['value_propositions'][0]}
+- {STATDEVS_CONTEXT['value_propositions'][1]}
+- {STATDEVS_CONTEXT['value_propositions'][2]}
+
+Provide clear ROI quantification and implementation approaches for StatDevs services.""",
+    model=gemini_model,
+    tools=[industry_problems_tool]
+)
+
+solutions_architect_agent = Agent(
+    name="StatDevs_Solutions_Architect",
+    instructions=f"""You are a StatDevs solutions architect. Recommend specific services and tools using our expertise: {', '.join(STATDEVS_CONTEXT['expertise'])}.
+
+Reference our proven ROI: {STATDEVS_CONTEXT['value_propositions'][1]} and our process: {', '.join(STATDEVS_CONTEXT['process'])}.
+
+Always provide sales proposals with clear next steps.""",
+    model=gemini_model,
+    tools=[ai_solutions_tool]
+)
+
+# Enhanced research functions with agent manager orchestration
 async def analyze_company_website(company_name: str, website_url: str) -> str:
-    """Analyze company website for business insights with StatDevs sales focus."""
+    """Analyze company website using the Website Research Agent through Agent Manager."""
     try:
-        # Use Runner.run() for automatic tracing
-        runner = Runner(
-            model="gpt-4",
-            messages=[
-                {
-                    "role": "system",
-                    "content": f"You are a StatDevs sales intelligence analyst. Your goal is to identify how {STATDEVS_CONTEXT['company_name']} can help this company with data solutions. Focus on StatDevs' core services: {', '.join(STATDEVS_CONTEXT['services'].keys())}. Use specific value propositions like {STATDEVS_CONTEXT['value_propositions'][0]} and {STATDEVS_CONTEXT['value_propositions'][1]}."
-                },
-                {
-                    "role": "user",
-                    "content": f"Analyze {company_name} at {website_url} and identify:\n\n1. **Business Model & Current State**: What do they do and where are they in their data journey?\n2. **StatDevs Opportunity Areas**: Which of our services (Data Engineering, Data Science/ML, AI, BI) would benefit them most?\n3. **Specific Pain Points**: What data challenges do they likely face?\n4. **ROI Potential**: How can our solutions deliver measurable value?\n5. **Sales Approach**: What specific StatDevs capabilities should we highlight?\n\nFormat as a sales-ready analysis with clear StatDevs service recommendations."
-                }
-            ],
-            temperature=0.3
+        agent_mgr = await get_agent_manager()
+        
+        # Submit request to Website Research Agent
+        request_id = agent_mgr.submit_request(
+            request_type="website_research",
+            payload={
+                "company_name": company_name,
+                "website_url": website_url
+            },
+            priority=RequestPriority.HIGH
         )
         
-        response = await runner.run()
-        return response.choices[0].message.content
-    except Exception as e:
-        # Enhanced fallback with StatDevs sales focus
-        if 'fertiliser' in company_name.lower() or 'fertilizer' in company_name.lower():
-            return f"**StatDevs Sales Analysis for {company_name}** (Agriculture & Fertilizer Industry):\n\n**Business Model**: Large-scale fertilizer manufacturing and distribution\n**StatDevs Opportunity**: High potential for Data Engineering & AI solutions\n\n**Key Pain Points**:\n- Manual inventory tracking (our solutions reduce this by 82%)\n- Seasonal demand fluctuations (ML can predict with 43% accuracy)\n- Supply chain disruptions (real-time monitoring needed)\n\n**StatDevs Services to Highlight**:\n1. **Data Engineering**: Unify supply chain data for 35-45% faster insights\n2. **AI/ML**: Demand forecasting and inventory optimization\n3. **Business Intelligence**: Real-time dashboards for 24/7 access\n\n**ROI Potential**: 3.2x return on AI investment based on our track record"
+        # Wait for result
+        result = await agent_mgr.get_request_result(request_id, timeout=60.0)
+        
+        if result and result.status == "completed":
+            return result.result
         else:
-            return f"**StatDevs Sales Analysis for {company_name}**:\n\n**Current State**: Appears to be in growth phase with data infrastructure needs\n**StatDevs Opportunity**: Data Engineering and Business Intelligence solutions\n\n**Recommended Approach**:\n- Highlight our 82% reduction in data integration time\n- Emphasize 24/7 mobile access to key metrics\n- Focus on phased implementation process\n\n**Next Steps**: Discovery call to assess specific data challenges and map current ecosystem"
+            raise Exception(f"Website research failed: {result.error if result else 'Unknown error'}")
+            
+    except Exception as e:
+        print(f"⚠️ Website research via Agent Manager failed: {e}")
+        # Fallback to direct function
+        from deep_research_system_handoffs import analyze_company_website_direct
+        return analyze_company_website_direct(company_name, website_url)
 
 async def identify_industry_problems(company_industry: str, company_size: str, person_role: str) -> str:
-    """Identify industry problems with StatDevs solution mapping."""
+    """Identify industry problems using the Industry Problems Agent through Agent Manager."""
     try:
-        response = await client.chat.completions.create(
-            model="gpt-4",
-            messages=[
-                {
-                    "role": "system",
-                    "content": f"You are a StatDevs industry analyst. Map industry problems to StatDevs solutions. Use our proven metrics: {STATDEVS_CONTEXT['value_propositions'][0]}, {STATDEVS_CONTEXT['value_propositions'][1]}, and {STATDEVS_CONTEXT['value_propositions'][2]}."
-                },
-                {
-                    "role": "user",
-                    "content": f"Analyze {company_industry} industry challenges for a {company_size} company with {person_role} contact. Identify:\n\n1. **Industry-Specific Problems**: What challenges do {company_industry} companies face?\n2. **StatDevs Solution Mapping**: How do our services solve these problems?\n3. **ROI Quantification**: Use our proven metrics to show value\n4. **Implementation Approach**: How would our phased process work for them?\n\nFormat as StatDevs sales intelligence with clear service recommendations."
-                }
-            ],
-            temperature=0.3
+        agent_mgr = await get_agent_manager()
+        
+        # Submit request to Industry Problems Agent
+        request_id = agent_mgr.submit_request(
+            request_type="industry_problems",
+            payload={
+                "company_industry": company_industry,
+                "company_size": company_size,
+                "company_location": "Unknown",  # Could be enhanced
+                "person_role": person_role
+            },
+            priority=RequestPriority.HIGH
         )
-        return response.choices[0].message.content
-    except Exception as e:
-        # Enhanced fallback with StatDevs solution mapping
-        if 'agriculture' in company_industry.lower() or 'fertilizer' in company_industry.lower():
-            return f"**StatDevs Industry Analysis for {company_industry}** ({company_size} company):\n\n**Industry Challenges**:\n- Manual inventory tracking (82% reduction with our data engineering)\n- Seasonal demand fluctuations (67% automation with our AI solutions)\n- Supply chain disruptions (real-time monitoring with our BI dashboards)\n\n**StatDevs Solutions**:\n1. **Data Engineering**: Unify fragmented data for 35-45% faster insights\n2. **AI/ML**: Predictive analytics for demand forecasting (43% accuracy improvement)\n3. **Business Intelligence**: 24/7 mobile access to key metrics\n\n**Implementation**: Phased approach starting with core data integration, then adding AI capabilities\n\n**ROI**: 3.2x return on investment based on our track record"
+        
+        # Wait for result
+        result = await agent_mgr.get_request_result(request_id, timeout=60.0)
+        
+        if result and result.status == "completed":
+            return result.result
         else:
-            return f"**StatDevs Industry Analysis for {company_industry}** ({company_size} company):\n\n**Common Challenges**:\n- Data silos across departments (82% reduction with our solutions)\n- Manual reporting processes (67% automation potential)\n- Lack of real-time insights (24/7 mobile access available)\n\n**StatDevs Approach**:\n- Start with data engineering to unify systems\n- Add business intelligence for real-time dashboards\n- Implement AI/ML for predictive capabilities\n\n**Value Proposition**: Proven track record of 3.2x ROI on AI investments"
+            raise Exception(f"Industry problems analysis failed: {result.error if result else 'Unknown error'}")
+            
+    except Exception as e:
+        print(f"⚠️ Industry problems analysis via Agent Manager failed: {e}")
+        # Fallback to direct function
+        from deep_research_system_handoffs import identify_industry_problems_direct
+        return identify_industry_problems_direct(company_industry, company_size, "Unknown", person_role)
 
 async def research_ai_solutions(industry_problems: List[str], company_industry: str, company_size: str) -> str:
-    """Research StatDevs AI and data analytics solutions for identified problems."""
+    """Research AI solutions using the Solutions Research Agent through Agent Manager."""
     try:
-        problems_text = "\n".join([f"- {problem}" for problem in industry_problems])
-        response = await client.chat.completions.create(
-            model="gpt-4",
-            messages=[
-                {
-                    "role": "system",
-                    "content": f"You are a StatDevs solutions architect. Recommend our specific services and tools. Use our expertise: {', '.join(STATDEVS_CONTEXT['expertise'])}. Reference our proven ROI: {STATDEVS_CONTEXT['value_propositions'][1]} and {STATDEVS_CONTEXT['value_propositions'][2]}."
-                },
-                {
-                    "role": "user",
-                    "content": f"Recommend StatDevs solutions for these problems:\n{problems_text}\n\nCompany: {company_size} in {company_industry}\n\nProvide:\n1. **StatDevs Service Recommendations**: Which of our 4 core services fit best?\n2. **Technology Stack**: Use our expertise in {', '.join(STATDEVS_CONTEXT['expertise'][:5])}\n3. **Implementation Benefits**: Reference our proven metrics\n4. **ROI Potential**: Use our track record of 3.2x return\n5. **Implementation Process**: Follow our {', '.join(STATDEVS_CONTEXT['process'])} approach\n\nFormat as StatDevs sales proposal with clear next steps."
-                }
-            ],
-            temperature=0.3
+        agent_mgr = await get_agent_manager()
+        
+        # Submit request to Solutions Research Agent
+        request_id = agent_mgr.submit_request(
+            request_type="ai_solutions",
+            payload={
+                "industry_problems": industry_problems,
+                "company_industry": company_industry,
+                "company_size": company_size
+            },
+            priority=RequestPriority.HIGH
         )
-        return response.choices[0].message.content
-    except Exception as e:
-        # Enhanced fallback with StatDevs solutions
-        if 'agriculture' in company_industry.lower() or 'fertilizer' in company_industry.lower():
-            return f"**StatDevs AI Solutions for {company_industry}** ({company_size} company):\n\n**Recommended Services**:\n1. **Data Engineering**: Unify supply chain data using Python/R and AWS\n2. **AI/ML**: Predictive analytics for demand forecasting using our ML expertise\n3. **Business Intelligence**: Real-time dashboards with R Shiny/Streamlit\n\n**Technology Stack**:\n- **Programming**: Python, R (our core expertise)\n- **Visualization**: R Shiny, Streamlit, Apache Superset\n- **Cloud**: AWS infrastructure\n- **ML**: Predictive modeling tools\n\n**Implementation Benefits**:\n- 82% reduction in data integration time\n- 67% automation of manual tasks\n- 24/7 mobile access to metrics\n\n**ROI**: 3.2x return on AI investment\n\n**Implementation**: Phased approach following our proven process"
+        
+        # Wait for result
+        result = await agent_mgr.get_request_result(request_id, timeout=60.0)
+        
+        if result and result.status == "completed":
+            return result.result
         else:
-            return f"**StatDevs AI Solutions for {company_industry}** ({company_size} company):\n\n**Core Services**:\n- **Data Engineering**: Unify fragmented data systems\n- **Business Intelligence**: Real-time dashboards and reporting\n- **AI/ML**: Predictive analytics and automation\n\n**Our Expertise**: Python, R, R Shiny, Streamlit, AWS, Machine Learning\n\n**Value Proposition**:\n- 82% reduction in data integration time\n- 35-45% faster insights\n- 3.2x return on AI investment\n\n**Implementation**: Discovery call → Assessment → Solution design → Phased rollout"
+            raise Exception(f"AI solutions research failed: {result.error if result else 'Unknown error'}")
+            
+    except Exception as e:
+        print(f"⚠️ AI solutions research via Agent Manager failed: {e}")
+        # Fallback to direct function
+        from deep_research_system_handoffs import research_ai_solutions_direct
+        return research_ai_solutions_direct(industry_problems, company_industry, company_size)
+
+async def research_linkedin_profile(person_name: str, company_name: str, linkedin_url: str = None) -> str:
+    """Research LinkedIn profile using the LinkedIn Research Agent through Agent Manager."""
+    try:
+        agent_mgr = await get_agent_manager()
+        
+        # Submit request to LinkedIn Research Agent
+        request_id = agent_mgr.submit_request(
+            request_type="linkedin_research",
+            payload={
+                "person_name": person_name,
+                "company_name": company_name,
+                "linkedin_url": linkedin_url
+            },
+            priority=RequestPriority.HIGH
+        )
+        
+        # Wait for result
+        result = await agent_mgr.get_request_result(request_id, timeout=60.0)
+        
+        if result and result.status == "completed":
+            return result.result
+        else:
+            raise Exception(f"LinkedIn research failed: {result.error if result else 'Unknown error'}")
+            
+    except Exception as e:
+        print(f"⚠️ LinkedIn research via Agent Manager failed: {e}")
+        # Fallback to direct function
+        from deep_research_system_handoffs import research_linkedin_profile_direct
+        return research_linkedin_profile_direct(person_name, company_name)
+
+async def research_with_tavily(company_name: str, person_name: str, company_industry: str = None) -> str:
+    """Research using Tavily Web Intelligence Agent through Agent Manager."""
+    try:
+        agent_mgr = await get_agent_manager()
+        
+        # Submit request to Tavily Research Agent
+        request_id = agent_mgr.submit_request(
+            request_type="web_intelligence",
+            payload={
+                "company_name": company_name,
+                "person_name": person_name,
+                "company_industry": company_industry or "Unknown",
+                "contact_type": "general"
+            },
+            priority=RequestPriority.HIGH
+        )
+        
+        # Wait for result
+        result = await agent_mgr.get_request_result(request_id, timeout=60.0)
+        
+        if result and result.status == "completed":
+            return result.result
+        else:
+            raise Exception(f"Tavily research failed: {result.error if result else 'Unknown error'}")
+            
+    except Exception as e:
+        print(f"⚠️ Tavily research via Agent Manager failed: {e}")
+        return f"Web intelligence research for {company_name} - {person_name} via Tavily (fallback mode)"
 
 async def generate_comprehensive_report(company_name: str, person_name: str, website_research: str, 
-                                     industry_problems: str, ai_solutions: str) -> str:
-    """Generate a comprehensive StatDevs sales report."""
+                                     industry_problems: str, ai_solutions: str, linkedin_research: str = None, tavily_research: str = None) -> str:
+    """Generate a comprehensive StatDevs sales report using the Research Report Agent through Agent Manager."""
     try:
-        response = await client.chat.completions.create(
-            model="gpt-4",
-            messages=[
-                {
-                    "role": "system",
-                    "content": f"You are a StatDevs sales consultant creating comprehensive lead research reports. Use our company context: {STATDEVS_CONTEXT['company_name']} offers {', '.join(STATDEVS_CONTEXT['services'].keys())} services. Our proven ROI includes {STATDEVS_CONTEXT['value_propositions'][0]} and {STATDEVS_CONTEXT['value_propositions'][1]}."
-                },
-                {
-                    "role": "user",
-                    "content": f"Create a StatDevs sales report for:\n\nCompany: {company_name}\nContact: {person_name}\n\nWebsite Research:\n{website_research}\n\nIndustry Problems:\n{industry_problems}\n\nAI Solutions:\n{ai_solutions}\n\nFormat as a StatDevs sales proposal with:\n1. Executive Summary\n2. Key Business Challenges\n3. StatDevs Solution Recommendations\n4. ROI Projections (use our proven metrics)\n5. Implementation Roadmap\n6. Next Steps (Discovery Call)\n\nMake it sales-ready with clear StatDevs value propositions."
-                }
-            ],
-            temperature=0.3
+        agent_mgr = await get_agent_manager()
+        
+        # Submit request to Research Report Agent
+        request_id = agent_mgr.submit_request(
+            request_type="report_generation",
+            payload={
+                "company_name": company_name,
+                "person_name": person_name,
+                "website_research": website_research,
+                "linkedin_research": linkedin_research or "",
+                "industry_problems": industry_problems,
+                "ai_solutions": ai_solutions,
+                "tavily_research": tavily_research or ""
+            },
+            priority=RequestPriority.HIGH
         )
-        return response.choices[0].message.content
+        
+        # Wait for result
+        result = await agent_mgr.get_request_result(request_id, timeout=60.0)
+        
+        if result and result.status == "completed":
+            return result.result
+        else:
+            raise Exception(f"Report generation failed: {result.error if result else 'Unknown error'}")
+            
+    except Exception as e:
+        print(f"⚠️ Report generation via Agent Manager failed: {e}")
+        # Fallback to direct function
+        from deep_research_system_handoffs import compile_research_report_direct
+        return compile_research_report_direct(company_name, person_name, website_research, linkedin_research or "")
     except Exception as e:
         return f"**StatDevs Sales Report for {company_name}**\n\n**Executive Summary**: {company_name} shows strong potential for StatDevs data solutions\n\n**Key Challenges**: Data integration, manual processes, lack of real-time insights\n\n**StatDevs Solutions**: Data Engineering, AI/ML, Business Intelligence\n\n**ROI Projection**: 3.2x return on investment based on our track record\n\n**Implementation**: Phased approach following our proven process\n\n**Next Steps**: Schedule discovery call to assess specific needs"
 
 async def generate_email_pitch(person_name: str, company_name: str, research_summary: str) -> str:
-    """Generate a personalized StatDevs email pitch based on research."""
+    """Generate a personalized StatDevs email pitch using the Email Generation Agent through Agent Manager."""
     try:
-        response = await client.chat.completions.create(
-            model="gpt-4",
-            messages=[
-                {
-                    "role": "system",
-                    "content": f"You are a StatDevs sales professional. Create personalized email pitches that highlight our services: {', '.join(STATDEVS_CONTEXT['services'].keys())}. Use our proven metrics: {STATDEVS_CONTEXT['value_propositions'][0]} and {STATDEVS_CONTEXT['value_propositions'][1]}. Include our contact: info@statdevs.com and process: {', '.join(STATDEVS_CONTEXT['process'])}."
-                },
-                {
-                    "role": "user",
-                    "content": f"Create a personalized StatDevs email pitch for {person_name} at {company_name} based on this research:\n\n{research_summary}\n\nMake it:\n1. **Personalized**: Reference their specific challenges and industry\n2. **StatDevs-Focused**: Highlight our relevant services and proven ROI\n3. **Value-Driven**: Use our specific metrics and success stories\n4. **Professional**: Maintain StatDevs brand voice\n5. **Clear CTA**: Schedule discovery call\n6. **Include**: Our contact info and next steps\n\nFormat as a professional sales email from StatDevs team."
-                }
-            ],
-            temperature=0.3
+        agent_mgr = await get_agent_manager()
+        
+        # Submit request to Email Generation Agent
+        request_id = agent_mgr.submit_request(
+            request_type="email_generation",
+            payload={
+                "person_name": person_name,
+                "company_name": company_name,
+                "research_summary": research_summary
+            },
+            priority=RequestPriority.HIGH
         )
-        return response.choices[0].message.content
+        
+        # Wait for result
+        result = await agent_mgr.get_request_result(request_id, timeout=60.0)
+        
+        if result and result.status == "completed":
+            return result.result
+        else:
+            raise Exception(f"Email generation failed: {result.error if result else 'Unknown error'}")
+            
     except Exception as e:
-        return f"**StatDevs Email Pitch for {person_name} at {company_name}**\n\nDear {person_name},\n\nBased on our analysis of {company_name}, we've identified significant opportunities for data-driven transformation.\n\n**Key Challenges**: Data integration, manual processes, lack of real-time insights\n**StatDevs Solutions**: Data Engineering, AI/ML, Business Intelligence\n**Proven ROI**: 3.2x return on AI investment, 82% reduction in data integration time\n\n**Next Steps**: Let's schedule a discovery call to discuss your specific needs.\n\nBest regards,\nStatDevs Team\ninfo@statdevs.com"
+        print(f"⚠️ Email generation via Agent Manager failed: {e}")
+        # Fallback to direct function
+        from deep_research_system_handoffs import generate_email_pitch_direct
+        return generate_email_pitch_direct(person_name, company_name, research_summary)
 
 async def extract_lead_information(message: str) -> Dict[str, str]:
     """Extract lead information from user message."""
@@ -249,16 +491,57 @@ async def extract_lead_information(message: str) -> Dict[str, str]:
         
         return info
 
+async def initialize_agent_system():
+    """Initialize the full agent management system with tracing."""
+    global agent_manager
+    
+    try:
+        print("🚀 Initializing Agent Manager with full orchestration...")
+        
+        # Initialize agent manager
+        agent_manager = await initialize_agent_manager()
+        
+        # Register all available agents
+        success = await register_all_agents(agent_manager)
+        
+        if success:
+            print("✅ All agents registered and ready")
+            print(f"📊 System Status: {agent_manager.get_system_status()}")
+        else:
+            print("⚠️ Some agents failed to register")
+        
+        return agent_manager
+        
+    except Exception as e:
+        print(f"❌ Failed to initialize agent system: {e}")
+        return None
+
 @cl.on_chat_start
 async def start():
-    """Initialize the chat session."""
+    """Initialize the chat session with full agent system."""
+    
+    # Initialize the agent management system
+    await initialize_agent_system()
+    
     await cl.Message(
-        content=f"""# StatDevs Sales Intelligence System - BETA VERSION
+        content=f"""# StatDevs Sales Intelligence System - FULL AGENT ORCHESTRATION
 
 Welcome to the AI-powered lead research system for **{STATDEVS_CONTEXT['company_name']}**!
 
+## 🤖 **Full Agent System Active:**
+- **Agent Manager**: Centralized orchestration with intelligent handoffs
+- **Website Research Agent**: Company website analysis
+- **LinkedIn Research Agent**: Professional profile analysis  
+- **Tavily Research Agent**: Web intelligence and market research
+- **Industry Problems Agent**: Challenge identification and mapping
+- **Solutions Research Agent**: AI/data solutions recommendations
+- **Report Generation Agent**: Comprehensive analysis compilation
+- **Email Generation Agent**: Personalized pitch creation
+
 ## What I can do:
 - **Analyze company websites** and identify StatDevs opportunities
+- **Research LinkedIn profiles** for decision-making insights
+- **Gather web intelligence** using Tavily for market context
 - **Map industry problems** to our specific solutions
 - **Recommend StatDevs services** (Data Engineering, AI/ML, BI, Data Science)
 - **Generate sales-ready reports** with our proven ROI metrics
@@ -292,102 +575,161 @@ Or ask me to perform comprehensive research on a specific lead.
 
 @cl.on_message
 async def main(message: cl.Message):
-    """Handle incoming messages and perform lead research."""
+    """Handle incoming messages and perform lead research with comprehensive tracing."""
     
     user_input = message.content
     
-    # Check if user wants comprehensive research
-    if any(keyword in user_input.lower() for keyword in ['comprehensive', 'full research', 'analyze lead', 'research lead']):
-        await handle_comprehensive_research(user_input)
-    else:
-        # Extract lead information and provide insights
-        await handle_lead_analysis(user_input)
+    # Generate unique trace ID for this user query
+    trace_id = f"trace_{uuid.uuid4().hex}"
+    session_id = cl.user_session.get("id", "unknown")
+    
+    # Create comprehensive trace for the entire user interaction
+    with trace(
+        "Sales Deep Search Query",
+        trace_id=trace_id,
+        group_id=session_id,
+        metadata={
+            "user_query": user_input,
+            "timestamp": datetime.now().isoformat(),
+            "session_id": session_id,
+            "query_type": "comprehensive" if any(keyword in user_input.lower() for keyword in ['comprehensive', 'full research', 'analyze lead', 'research lead']) else "quick_analysis",
+            "system": "StatDevs Sales Intelligence"
+        }
+    ) as main_trace:
+        
+        print(f"🔍 Starting traced sales research query: {trace_id}")
+        
+        # Check if user wants comprehensive research
+        if any(keyword in user_input.lower() for keyword in ['comprehensive', 'full research', 'analyze lead', 'research lead']):
+            await handle_comprehensive_research(user_input, main_trace)
+        else:
+            # Extract lead information and provide insights
+            await handle_lead_analysis(user_input, main_trace)
+        
+        print(f"✅ Completed traced sales research query: {trace_id}")
+        print(f"📊 View trace at: https://platform.openai.com/logs?api=traces&trace_id={trace_id}")
 
-async def handle_comprehensive_research(user_input: str):
-    """Perform comprehensive lead research."""
+async def handle_comprehensive_research(user_input: str, main_trace):
+    """Perform comprehensive lead research with detailed tracing."""
     
     await cl.Message(content="Starting Comprehensive Lead Research...\nThis will use multiple AI agents to analyze the lead thoroughly.").send()
     
-    # Extract lead information
-    lead_info = await extract_lead_information(user_input)
+    # Step 0: Extract lead information (with custom span)
+    with custom_span("Lead Information Extraction", data={"step": "0_extraction"}):
+        lead_info = await extract_lead_information(user_input)
+        print(f"📋 Lead extracted: {lead_info['company_name']} - {lead_info['person_name']}")
     
-    # Step 1: Website Research
+    # Step 1: Website Research (via Agent Manager)
     await cl.Message(content="**Step 1: Website Research**\nAnalyzing company website...").send()
-    website_research = await analyze_company_website(lead_info["company_name"], lead_info["website"])
+    with custom_span("Website Analysis", data={"step": "1_website", "company": lead_info["company_name"], "website": lead_info["website"]}):
+        website_research = await analyze_company_website(lead_info["company_name"], lead_info["website"])
+        print(f"🌐 Website analysis completed for {lead_info['company_name']}")
     await cl.Message(content=f"**Website Analysis Complete:**\n{website_research}").send()
     
-    # Step 2: Industry Problems Analysis
-    await cl.Message(content="**Step 2: Industry Problems Analysis**\nIdentifying potential challenges...").send()
-    industry_problems = await identify_industry_problems(
-        lead_info["company_industry"], 
-        lead_info["company_size"], 
-        lead_info["role"]
-    )
+    # Step 2: LinkedIn Research (via Agent Manager)
+    await cl.Message(content="**Step 2: LinkedIn Research**\nAnalyzing professional profile...").send()
+    with custom_span("LinkedIn Analysis", data={"step": "2_linkedin", "person": lead_info["person_name"], "company": lead_info["company_name"]}):
+        linkedin_research = await research_linkedin_profile(lead_info["person_name"], lead_info["company_name"], lead_info.get("linkedin"))
+        print(f"💼 LinkedIn analysis completed for {lead_info['person_name']}")
+    await cl.Message(content=f"**LinkedIn Analysis Complete:**\n{linkedin_research}").send()
+    
+    # Step 3: Tavily Web Intelligence (via Agent Manager)
+    await cl.Message(content="**Step 3: Web Intelligence Research**\nGathering market intelligence...").send()
+    with custom_span("Tavily Research", data={"step": "3_tavily", "company": lead_info["company_name"], "industry": lead_info["company_industry"]}):
+        tavily_research = await research_with_tavily(lead_info["company_name"], lead_info["person_name"], lead_info["company_industry"])
+        print(f"🔍 Tavily research completed for {lead_info['company_name']}")
+    await cl.Message(content=f"**Web Intelligence Complete:**\n{tavily_research}").send()
+    
+    # Step 4: Industry Problems Analysis (via Agent Manager)
+    await cl.Message(content="**Step 4: Industry Problems Analysis**\nIdentifying potential challenges...").send()
+    with custom_span("Industry Analysis", data={"step": "4_industry", "industry": lead_info["company_industry"], "size": lead_info["company_size"]}):
+        industry_problems = await identify_industry_problems(
+            lead_info["company_industry"], 
+            lead_info["company_size"], 
+            lead_info["role"]
+        )
+        print(f"🏭 Industry analysis completed for {lead_info['company_industry']}")
     await cl.Message(content=f"**Industry Problems Identified:**\n{industry_problems}").send()
     
-    # Step 3: AI Solutions Research
-    await cl.Message(content="**Step 3: AI Solutions Research**\nFinding relevant AI solutions...").send()
+    # Step 5: AI Solutions Research (via Agent Manager)
+    await cl.Message(content="**Step 5: AI Solutions Research**\nFinding relevant AI solutions...").send()
     problems_list = [industry_problems]  # Simplified for now
-    ai_solutions = await research_ai_solutions(
-        problems_list, 
-        lead_info["company_industry"], 
-        lead_info["company_size"]
-    )
+    with custom_span("Solutions Research", data={"step": "5_solutions", "company_size": lead_info["company_size"], "industry": lead_info["company_industry"]}):
+        ai_solutions = await research_ai_solutions(
+            problems_list, 
+            lead_info["company_industry"], 
+            lead_info["company_size"]
+        )
+        print(f"🤖 AI solutions research completed")
     await cl.Message(content=f"**AI Solutions Research Complete:**\n{ai_solutions}").send()
     
-    # Step 4: Generate Comprehensive Report
-    await cl.Message(content="**Step 4: Generating Comprehensive Report**...").send()
-    comprehensive_report = await generate_comprehensive_report(
-        lead_info["company_name"],
-        lead_info["person_name"],
-        website_research,
-        industry_problems,
-        ai_solutions
-    )
+    # Step 6: Generate Comprehensive Report (via Agent Manager)
+    await cl.Message(content="**Step 6: Generating Comprehensive Report**...").send()
+    with custom_span("Report Generation", data={"step": "6_report", "company": lead_info["company_name"], "person": lead_info["person_name"]}):
+        comprehensive_report = await generate_comprehensive_report(
+            lead_info["company_name"],
+            lead_info["person_name"],
+            website_research,
+            industry_problems,
+            ai_solutions,
+            linkedin_research,
+            tavily_research
+        )
+        print(f"📄 Comprehensive report generated")
     await cl.Message(content=f"**Comprehensive Report Generated:**\n{comprehensive_report}").send()
     
-    # Step 5: Generate Email Pitch
-    await cl.Message(content="**Step 5: Generating Email Pitch**...").send()
-    email_pitch = await generate_email_pitch(
-        lead_info["person_name"],
-        lead_info["company_name"],
-        comprehensive_report
-    )
+    # Step 7: Generate Email Pitch (via Agent Manager)
+    await cl.Message(content="**Step 7: Generating Email Pitch**...").send()
+    with custom_span("Email Pitch Generation", data={"step": "7_email", "person": lead_info["person_name"], "company": lead_info["company_name"]}):
+        email_pitch = await generate_email_pitch(
+            lead_info["person_name"],
+            lead_info["company_name"],
+            comprehensive_report
+        )
+        print(f"📧 Email pitch generated for {lead_info['person_name']}")
     await cl.Message(content=f"**Personalized Email Pitch:**\n{email_pitch}").send()
     
     # Final summary
     await cl.Message(content="**Comprehensive Research Complete!**\nAll research steps completed. Check the results above for the complete analysis and recommendations.").send()
 
-async def handle_lead_analysis(user_input: str):
-    """Handle individual lead analysis requests."""
+async def handle_lead_analysis(user_input: str, main_trace):
+    """Handle individual lead analysis requests with tracing."""
     
-    # Extract lead information
-    lead_info = await extract_lead_information(user_input)
+    # Extract lead information (with custom span)
+    with custom_span("Quick Lead Extraction", data={"analysis_type": "quick"}):
+        lead_info = await extract_lead_information(user_input)
+        print(f"📋 Quick lead extracted: {lead_info['company_name']} - {lead_info['person_name']}")
     
     await cl.Message(content=f"**Lead Information Extracted:**\nCompany: {lead_info['company_name']}\nContact: {lead_info['person_name']}\nRole: {lead_info['role']}").send()
     
-    # Provide quick insights
+    # Provide quick insights (traced)
     if lead_info["website"]:
         await cl.Message(content="**Quick Website Analysis:**\nAnalyzing business opportunities...").send()
-        website_insights = await analyze_company_website(lead_info["company_name"], lead_info["website"])
+        with custom_span("Quick Website Analysis", data={"company": lead_info["company_name"], "website": lead_info["website"]}):
+            website_insights = await analyze_company_website(lead_info["company_name"], lead_info["website"])
+            print(f"🌐 Quick website analysis completed for {lead_info['company_name']}")
         await cl.Message(content=f"**Website Insights:**\n{website_insights}").send()
     
-    # Industry analysis
+    # Industry analysis (traced)
     await cl.Message(content="**Industry Analysis:**\nIdentifying business challenges...").send()
-    industry_insights = await identify_industry_problems(
-        lead_info["company_industry"], 
-        lead_info["company_size"], 
-        lead_info["role"]
-    )
+    with custom_span("Quick Industry Analysis", data={"industry": lead_info["company_industry"], "size": lead_info["company_size"]}):
+        industry_insights = await identify_industry_problems(
+            lead_info["company_industry"], 
+            lead_info["company_size"], 
+            lead_info["role"]
+        )
+        print(f"🏭 Quick industry analysis completed for {lead_info['company_industry']}")
     await cl.Message(content=f"**Industry Insights:**\n{industry_insights}").send()
     
-    # Recommendations
+    # Recommendations (traced)
     await cl.Message(content="**Recommendations:**\nResearching AI solutions...").send()
-    solutions = await research_ai_solutions(
-        [industry_insights], 
-        lead_info["company_industry"], 
-        lead_info["company_size"]
-    )
+    with custom_span("Quick Solutions Research", data={"company_size": lead_info["company_size"], "industry": lead_info["company_industry"]}):
+        solutions = await research_ai_solutions(
+            [industry_insights], 
+            lead_info["company_industry"], 
+            lead_info["company_size"]
+        )
+        print(f"🤖 Quick solutions research completed")
     await cl.Message(content=f"**AI Solutions Recommendations:**\n{solutions}").send()
 
 @cl.on_chat_end
