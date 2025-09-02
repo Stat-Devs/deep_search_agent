@@ -16,6 +16,8 @@ from dotenv import load_dotenv
 import json
 import uuid
 from datetime import datetime
+from fastapi import FastAPI
+from fastapi.responses import JSONResponse
 
 # Import the full agent management system
 from agent_manager import get_agent_manager, initialize_agent_manager, RequestPriority
@@ -736,6 +738,22 @@ async def handle_lead_analysis(user_input: str, main_trace):
 async def end():
     """Handle chat session end."""
     await cl.Message(content="Thank you for using the Deep Research System. Session ended.").send()
+
+# Create FastAPI app for health checks
+app = FastAPI()
+
+@app.get("/health")
+async def health_check():
+    """Health check endpoint for Docker and load balancers."""
+    return JSONResponse(
+        status_code=200,
+        content={
+            "status": "healthy",
+            "service": "StatDevs Sales Intelligence System",
+            "timestamp": datetime.now().isoformat(),
+            "version": "1.0.0"
+        }
+    )
 
 if __name__ == "__main__":
     print("Deep Research System - Chainlit App")

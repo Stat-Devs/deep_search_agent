@@ -58,6 +58,18 @@ jobs:
         docker build -t ${{ env.DOCKER_IMAGE_NAME }}:${{ env.DOCKER_TAG }} .
         docker tag ${{ env.DOCKER_IMAGE_NAME }}:${{ env.DOCKER_TAG }} ${{ env.DOCKER_IMAGE_NAME }}:latest
     
+    - name: Copy files to server
+      uses: appleboy/scp-action@v0.1.4
+      with:
+        host: ${{ secrets.DO_HOST }}
+        username: ${{ secrets.DO_USERNAME }}
+        key: ${{ secrets.DO_SSH_KEY }}
+        port: 22
+        source: "."
+        target: "/opt/statdevs-sales-intelligence"
+        strip_components: 1
+        rm: true
+
     - name: Deploy to Digital Ocean
       uses: appleboy/ssh-action@v1.0.0
       with:
@@ -66,8 +78,7 @@ jobs:
         key: ${{ secrets.DO_SSH_KEY }}
         port: 22
         script: |
-          # Create application directory
-          mkdir -p /opt/statdevs-sales-intelligence
+          # Navigate to application directory
           cd /opt/statdevs-sales-intelligence
           
           # Stop existing containers
@@ -83,126 +94,6 @@ jobs:
           TAVILY_API_KEY=${{ secrets.TAVILY_API_KEY }}
           OPENAI_TRACE=1
           PYTHONPATH=/app
-          EOF
-          
-          # Create docker-compose.yml
-          cat > docker-compose.yml << 'EOF'
-          version: '3.8'
-          
-          services:
-            statdevs-sales-intelligence:
-              build: .
-              container_name: statdevs-sales-ai
-              ports:
-                - "8000:8000"
-              env_file:
-                - .env
-              volumes:
-                - ./logs:/app/logs
-                - ./uploads:/app/uploads
-              restart: unless-stopped
-              healthcheck:
-                test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
-                interval: 30s
-                timeout: 10s
-                retries: 3
-                start_period: 40s
-              networks:
-                - statdevs-network
-          
-          networks:
-            statdevs-network:
-              driver: bridge
-          EOF
-          
-          # Create Dockerfile
-          cat > Dockerfile << 'EOF'
-          # Use Python 3.11 slim image for smaller size
-          FROM python:3.11-slim
-          
-          # Set working directory
-          WORKDIR /app
-          
-          # Set environment variables
-          ENV PYTHONDONTWRITEBYTECODE=1 \
-              PYTHONUNBUFFERED=1 \
-              PYTHONPATH=/app \
-              PIP_NO_CACHE_DIR=1 \
-              PIP_DISABLE_PIP_VERSION_CHECK=1
-          
-          # Install system dependencies
-          RUN apt-get update && apt-get install -y \
-              gcc \
-              g++ \
-              curl \
-              && rm -rf /var/lib/apt/lists/*
-          
-          # Copy requirements first for better caching
-          COPY requirements.txt .
-          
-          # Install Python dependencies
-          RUN pip install --no-cache-dir -r requirements.txt
-          
-          # Copy application code
-          COPY . .
-          
-          # Create non-root user for security
-          RUN useradd --create-home --shell /bin/bash app \
-              && chown -R app:app /app
-          USER app
-          
-          # Expose port
-          EXPOSE 8000
-          
-          # Health check
-          HEALTHCHECK --interval=30s --timeout=30s --start-period=5s --retries=3 \
-              CMD curl -f http://localhost:8000/health || exit 1
-          
-          # Run the application
-          CMD ["chainlit", "run", "app.py", "--host", "0.0.0.0", "--port", "8000"]
-          EOF
-          
-          # Create requirements.txt
-          cat > requirements.txt << 'EOF'
-          chainlit==1.0.500
-          openai==1.12.0
-          python-dotenv==1.0.0
-          requests==2.31.0
-          beautifulsoup4==4.12.2
-          lxml==4.9.3
-          selenium==4.15.2
-          webdriver-manager==4.0.1
-          tavily-python==0.3.0
-          google-generativeai==0.3.2
-          agents==0.1.0
-          pytest==7.4.3
-          pytest-asyncio==0.21.1
-          aiohttp==3.9.1
-          asyncio==3.4.3
-          uvloop==0.19.0
-          EOF
-          
-          # Copy application files
-          # Note: In a real scenario, you'd copy from the repository
-          # For now, we'll create a simple app.py
-          cat > app.py << 'EOF'
-          import os
-          import chainlit as cl
-          from dotenv import load_dotenv
-          
-          load_dotenv()
-          
-          @cl.on_chat_start
-          async def start():
-              await cl.Message(content="StatDevs Sales Intelligence System is running!").send()
-          
-          @cl.on_message
-          async def main(message: cl.Message):
-              await cl.Message(content=f"Echo: {message.content}").send()
-          
-          if __name__ == "__main__":
-              print("StatDevs Sales Intelligence System - Chainlit App")
-              print("Starting server...")
           EOF
           
           # Create logs and uploads directories
