@@ -23,10 +23,11 @@ load_dotenv(find_dotenv())
 openai_api_key = os.getenv("OPENAI_API_KEY")
 gemini_api_key = os.getenv("GEMINI_API_KEY")
 
+# Make API key checks optional for deployment
 if not openai_api_key:
-    raise ValueError("OPENAI_API_KEY not found in environment variables")
+    print("Warning: OPENAI_API_KEY not found in environment variables")
 if not gemini_api_key:
-    raise ValueError("GEMINI_API_KEY not found in environment variables")
+    print("Warning: GEMINI_API_KEY not found in environment variables")
 
 # Configure OpenAI client
 try:

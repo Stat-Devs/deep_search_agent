@@ -64,12 +64,13 @@ openai_api_key = os.getenv("OPENAI_API_KEY")
 gemini_api_key = os.getenv("GEMINI_API_KEY")
 tavily_api_key = os.getenv("TAVILY_API_KEY")
 
+# Make API key checks optional for deployment
 if not openai_api_key:
-    raise ValueError("OPENAI_API_KEY not found in environment variables")
+    print("Warning: OPENAI_API_KEY not found in environment variables")
 if not gemini_api_key:
-    raise ValueError("GEMINI_API_KEY not found in environment variables")
+    print("Warning: GEMINI_API_KEY not found in environment variables")
 if not tavily_api_key:
-    raise ValueError("TAVILY_API_KEY not found in environment variables")
+    print("Warning: TAVILY_API_KEY not found in environment variables")
 
 # Standard OpenAI client for legacy functions
 client = AsyncOpenAI(
