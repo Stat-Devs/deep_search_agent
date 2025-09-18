@@ -6,8 +6,6 @@ services:
     container_name: statdevs-sales-ai-v2
     ports:
       - "8000:8000"
-    env_file:
-      - .env
     environment:
       - OPENAI_API_KEY=${OPENAI_API_KEY}
       - GEMINI_API_KEY=${GEMINI_API_KEY}
