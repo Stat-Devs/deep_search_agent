@@ -528,7 +528,7 @@ async def start():
     await initialize_agent_system()
     
     await cl.Message(
-        content=f"""# StatDevs Sales Intelligence System 
+        content=f"""# StatDevs Sales Intelligence System v2.0
 
 Welcome to the AI-powered lead research system for **{STATDEVS_CONTEXT['company_name']}**!
 
