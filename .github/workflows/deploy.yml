@@ -53,10 +53,12 @@ jobs:
     - name: Set up Docker Buildx
       uses: docker/setup-buildx-action@v3
     
-    - name: Build Docker image
+    - name: Build and push Docker image
       run: |
         docker build -t ${{ env.DOCKER_IMAGE_NAME }}:${{ env.DOCKER_TAG }} .
         docker tag ${{ env.DOCKER_IMAGE_NAME }}:${{ env.DOCKER_TAG }} ${{ env.DOCKER_IMAGE_NAME }}:latest
+        # Save image as tar file for transfer
+        docker save ${{ env.DOCKER_IMAGE_NAME }}:${{ env.DOCKER_TAG }} | gzip > ${{ env.DOCKER_IMAGE_NAME }}.tar.gz
     
     - name: Copy files to server
       uses: appleboy/scp-action@v0.1.4
@@ -69,6 +71,7 @@ jobs:
         target: "/opt/statdevs-sales-intelligence"
         strip_components: 1
         rm: true
+        include: "*.tar.gz"
 
     - name: Deploy to Digital Ocean
       uses: appleboy/ssh-action@v1.0.0
@@ -83,6 +86,9 @@ jobs:
           
           # Stop existing containers
           docker-compose down || true
+          
+          # Load the pre-built image
+          docker load < ${{ env.DOCKER_IMAGE_NAME }}.tar.gz
           
           # Remove old images to free up space
           docker image prune -f
@@ -99,8 +105,8 @@ jobs:
           # Create logs and uploads directories
           mkdir -p logs uploads
           
-          # Build and start the application
-          docker-compose up -d --build
+          # Start the application using pre-built image
+          docker-compose up -d
           
           # Wait for the application to be ready
           sleep 30

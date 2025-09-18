@@ -2,9 +2,7 @@ version: '3.8'
 
 services:
   statdevs-sales-intelligence:
-    build:
-      context: ..
-      dockerfile: Dockerfile
+    image: statdevs-sales-intelligence:latest
     container_name: statdevs-sales-ai
     ports:
       - "8000:8000"
