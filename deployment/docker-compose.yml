@@ -3,7 +3,7 @@ version: '3.8'
 services:
   statdevs-sales-intelligence:
     image: statdevs-sales-intelligence:latest
-    container_name: statdevs-sales-ai
+    container_name: statdevs-sales-ai-v2
     ports:
       - "8000:8000"
     environment:
@@ -25,21 +25,6 @@ services:
     networks:
       - statdevs-network
 
-  # Optional: Add Redis for session management (uncomment if needed)
-  # redis:
-  #   image: redis:7-alpine
-  #   container_name: statdevs-redis
-  #   ports:
-  #     - "6379:6379"
-  #   volumes:
-  #     - redis_data:/data
-  #   restart: unless-stopped
-  #   networks:
-  #     - statdevs-network
-
 networks:
   statdevs-network:
     driver: bridge
-
-# volumes:
-#   redis_data:

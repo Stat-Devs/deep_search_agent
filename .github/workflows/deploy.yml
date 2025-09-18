@@ -53,10 +53,16 @@ jobs:
     - name: Set up Docker Buildx
       uses: docker/setup-buildx-action@v3
     
-    - name: Build and push Docker image
+    - name: Build and push Docker image (NO CACHE)
       run: |
-        docker build -t ${{ env.DOCKER_IMAGE_NAME }}:${{ env.DOCKER_TAG }} .
+        # Remove any existing images
+        docker image rm ${{ env.DOCKER_IMAGE_NAME }}:${{ env.DOCKER_TAG }} || true
+        docker image rm ${{ env.DOCKER_IMAGE_NAME }}:latest || true
+        
+        # Build with no cache to ensure fresh build
+        docker build --no-cache --pull -t ${{ env.DOCKER_IMAGE_NAME }}:${{ env.DOCKER_TAG }} .
         docker tag ${{ env.DOCKER_IMAGE_NAME }}:${{ env.DOCKER_TAG }} ${{ env.DOCKER_IMAGE_NAME }}:latest
+        
         # Save image as tar file for transfer
         docker save ${{ env.DOCKER_IMAGE_NAME }}:${{ env.DOCKER_TAG }} | gzip > ${{ env.DOCKER_IMAGE_NAME }}.tar.gz
     
@@ -84,14 +90,18 @@ jobs:
           # Navigate to application directory
           cd /opt/statdevs-sales-intelligence
           
-          # Stop existing containers
-          docker-compose down || true
+          # Stop and remove ALL containers
+          docker-compose down -v --remove-orphans || true
+          docker stop $(docker ps -aq) || true
+          docker rm $(docker ps -aq) || true
           
-          # Load the pre-built image
+          # Remove ALL images to force fresh load
+          docker image rm ${{ env.DOCKER_IMAGE_NAME }}:latest || true
+          docker image rm ${{ env.DOCKER_IMAGE_NAME }}:${{ env.DOCKER_TAG }} || true
+          docker system prune -af || true
+          
+          # Load the fresh pre-built image
           docker load < ${{ env.DOCKER_IMAGE_NAME }}.tar.gz
-          
-          # Remove old images to free up space
-          docker image prune -f
           
           # Create environment file
           cat > .env << EOF

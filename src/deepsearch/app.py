@@ -4,7 +4,7 @@ Deep Research System with Agent Manager
 This file integrates the Agent Manager with existing
 Chainlit application to provide centralized agent orchestration.
 Enhanced with comprehensive tracing using Agents SDK and full agent orchestration.
-Updated: Email field removed from input format. Version 2.0.
+Updated: Email field removed from input format. Version 3.0 - Fresh Deployment.
 """
 
 import os
@@ -528,7 +528,7 @@ async def start():
     await initialize_agent_system()
     
     await cl.Message(
-        content=f"""# StatDevs Sales Intelligence System v2.0
+        content=f"""# StatDevs Sales Intelligence System v3.0
 
 Welcome to the AI-powered lead research system for **{STATDEVS_CONTEXT['company_name']}**!
 
