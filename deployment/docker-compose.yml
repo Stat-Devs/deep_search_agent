@@ -2,7 +2,7 @@ version: '3.8'
 
 services:
   statdevs-sales-intelligence:
-    build: .
+    build: ..
     container_name: statdevs-sales-ai
     ports:
       - "8000:8000"
