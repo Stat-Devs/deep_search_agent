@@ -91,7 +91,7 @@ jobs:
           cd /opt/statdevs-sales-intelligence
           
           # Stop and remove ALL containers
-          docker-compose down -v --remove-orphans || true
+          cd deployment && docker-compose down -v --remove-orphans || true
           docker stop $(docker ps -aq) || true
           docker rm $(docker ps -aq) || true
           
@@ -116,7 +116,7 @@ jobs:
           mkdir -p logs uploads
           
           # Start the application using pre-built image
-          docker-compose up -d
+          cd deployment && docker-compose up -d
           
           # Wait for the application to be ready
           sleep 30
