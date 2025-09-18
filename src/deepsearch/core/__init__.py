@@ -6,15 +6,12 @@ research system, and handoff logic.
 """
 
 from .agent_manager import AgentManager, RequestPriority, AgentStatus
-from .research_system import DeepResearchSystem
-from .handoff_system import HandoffSystem, ResearchContext, AgentType
+from .handoff_system import ResearchContext, AgentType
 
 __all__ = [
     "AgentManager",
     "RequestPriority", 
     "AgentStatus",
-    "DeepResearchSystem",
-    "HandoffSystem",
     "ResearchContext",
     "AgentType"
 ]

@@ -20,9 +20,9 @@ from fastapi import FastAPI
 from fastapi.responses import JSONResponse
 
 # Import the full agent management system
-from agent_manager import get_agent_manager, initialize_agent_manager, RequestPriority
-from agent_adapters import register_all_agents
-from deep_research_system_handoffs import ResearchContext, AgentType
+from core.agent_manager import get_agent_manager, initialize_agent_manager, RequestPriority
+from core.agent_adapters import register_all_agents
+from core.handoff_system import ResearchContext, AgentType
 
 # Load environment variables
 load_dotenv()
@@ -560,7 +560,6 @@ Simply paste your lead information in this format:
 Company: [Company Name]
 Contact: [Person Name]
 Role: [Job Title]
-Email: [Email Address]
 LinkedIn: [LinkedIn URL]
 Website: [Website URL]
 ```
