@@ -15,17 +15,24 @@ if ! command -v docker-compose &> /dev/null; then
     exit 1
 fi
 
-# Check if .env file exists
+# Check if .env file exists, create from example if not
 if [ ! -f ".env" ]; then
     echo "⚠️  .env file not found. Creating from example..."
-    if [ -f "env.example" ]; then
-        cp env.example .env
-        echo "✅ Created .env file. Please edit it with your actual API keys."
+    if [ -f ".env.example" ]; then
+        cp .env.example .env
+        echo "✅ Created .env file from .env.example"
+        echo "⚠️  Please edit .env with your actual API keys for local development"
         echo "   nano .env"
-        exit 1
+        echo ""
+        echo "For production deployment, the GitHub Actions workflow will automatically"
+        echo "use the secrets configured in your repository settings."
+        echo ""
+        read -p "Press Enter to continue with placeholder values (for testing) or Ctrl+C to edit .env first..."
     else
         echo "❌ No .env.example file found. Please create .env file manually:"
         echo "   OPENAI_API_KEY=your_actual_openai_api_key"
+        echo "   GEMINI_API_KEY=your_actual_gemini_api_key"
+        echo "   TAVILY_API_KEY=your_actual_tavily_api_key"
         echo "   OPENAI_TRACE=1"
         exit 1
     fi
@@ -34,11 +41,13 @@ fi
 # Load environment variables
 source .env
 
-# Check if OPENAI_API_KEY is set
-if [ -z "$OPENAI_API_KEY" ] || [ "$OPENAI_API_KEY" = "your_openai_api_key_here" ]; then
-    echo "❌ Please set your actual OPENAI_API_KEY in the .env file"
+# Check if API keys are set (allow placeholder values for testing)
+if [ -z "$OPENAI_API_KEY" ]; then
+    echo "❌ OPENAI_API_KEY not found in .env file"
     exit 1
 fi
+
+echo "ℹ️  Using API keys from .env file for local development"
 
 echo "✅ Environment variables loaded"
 echo "✅ Docker is running"
