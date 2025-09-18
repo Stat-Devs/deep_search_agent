@@ -4,7 +4,7 @@ Deep Research System with Agent Manager
 This file integrates the Agent Manager with existing
 Chainlit application to provide centralized agent orchestration.
 Enhanced with comprehensive tracing using Agents SDK and full agent orchestration.
-Updated: Email field removed from input format.
+Updated: Email field removed from input format. Version 2.0.
 """
 
 import os
