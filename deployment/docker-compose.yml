@@ -6,6 +6,8 @@ services:
     container_name: statdevs-sales-ai-v2
     ports:
       - "8000:8000"
+    env_file:
+      - .env
     environment:
       - OPENAI_API_KEY=${OPENAI_API_KEY}
       - GEMINI_API_KEY=${GEMINI_API_KEY}
@@ -13,11 +15,11 @@ services:
       - OPENAI_TRACE=${OPENAI_TRACE:-1}
       - PYTHONPATH=/app
     volumes:
-      - ./logs:/app/logs
-      - ./uploads:/app/uploads
+      - ../logs:/app/logs
+      - ../uploads:/app/uploads
     restart: unless-stopped
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      test: ["CMD", "curl", "-f", "http://localhost:8000/healthz"]
       interval: 30s
       timeout: 10s
       retries: 3

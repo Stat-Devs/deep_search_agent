@@ -750,6 +750,17 @@ async def health_check():
         }
     )
 
+@app.get("/healthz")
+async def healthz_check():
+    """Lightweight health check endpoint for Kubernetes and load balancers."""
+    return JSONResponse(
+        status_code=200,
+        content={
+            "status": "ok",
+            "timestamp": datetime.now().isoformat()
+        }
+    )
+
 if __name__ == "__main__":
     print("Deep Research System - Chainlit App")
     print("OpenAI Tracing: Using Runner.run() for automatic tracing")
