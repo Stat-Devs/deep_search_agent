@@ -77,7 +77,6 @@ jobs:
         target: "/opt/statdevs-sales-intelligence"
         strip_components: 1
         rm: true
-        include: "*.tar.gz"
 
     - name: Deploy to Digital Ocean
       uses: appleboy/ssh-action@v1.0.0
@@ -90,18 +89,33 @@ jobs:
           # Navigate to application directory
           cd /opt/statdevs-sales-intelligence
           
+          # List files to debug
+          echo "Files in directory:"
+          ls -la
+          
           # Stop and remove ALL containers
-          cd deployment && docker-compose down -v --remove-orphans || true
-          docker stop $(docker ps -aq) || true
-          docker rm $(docker ps -aq) || true
+          if [ -d "deployment" ]; then
+            cd deployment && docker-compose down -v --remove-orphans || true
+            cd ..
+          fi
+          
+          # Stop any running containers
+          if [ $(docker ps -q | wc -l) -gt 0 ]; then
+            docker stop $(docker ps -q) || true
+            docker rm $(docker ps -aq) || true
+          fi
           
           # Remove ALL images to force fresh load
           docker image rm ${{ env.DOCKER_IMAGE_NAME }}:latest || true
-          docker image rm ${{ env.DOCKER_IMAGE_NAME }}:${{ env.DOCKER_TAG }} || true
           docker system prune -af || true
           
-          # Load the fresh pre-built image
-          docker load < ${{ env.DOCKER_IMAGE_NAME }}.tar.gz
+          # Load the fresh pre-built image if it exists
+          if [ -f "${{ env.DOCKER_IMAGE_NAME }}.tar.gz" ]; then
+            docker load < ${{ env.DOCKER_IMAGE_NAME }}.tar.gz
+          else
+            echo "Docker image file not found, building from source..."
+            docker build -t ${{ env.DOCKER_IMAGE_NAME }}:latest .
+          fi
           
           # Create environment file
           cat > .env << EOF
@@ -116,7 +130,17 @@ jobs:
           mkdir -p logs uploads
           
           # Start the application using pre-built image
-          cd deployment && docker-compose up -d
+          if [ -d "deployment" ]; then
+            cd deployment && docker-compose up -d
+          else
+            echo "Deployment directory not found, running directly..."
+            docker run -d --name statdevs-sales-ai-v2 \
+              -p 8000:8000 \
+              --env-file .env \
+              -v $(pwd)/logs:/app/logs \
+              -v $(pwd)/uploads:/app/uploads \
+              ${{ env.DOCKER_IMAGE_NAME }}:latest
+          fi
           
           # Wait for the application to be ready
           sleep 30
