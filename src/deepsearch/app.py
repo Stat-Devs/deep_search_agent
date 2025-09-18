@@ -527,11 +527,11 @@ async def start():
     await initialize_agent_system()
     
     await cl.Message(
-        content=f"""# StatDevs Sales Intelligence System - FULL AGENT ORCHESTRATION
+        content=f"""# StatDevs Sales Intelligence System 
 
 Welcome to the AI-powered lead research system for **{STATDEVS_CONTEXT['company_name']}**!
 
-## 🤖 **Full Agent System Active:**
+## **Full Agent System Active:**
 - **Agent Manager**: Centralized orchestration with intelligent handoffs
 - **Website Research Agent**: Company website analysis
 - **LinkedIn Research Agent**: Professional profile analysis  
@@ -553,11 +553,6 @@ Welcome to the AI-powered lead research system for **{STATDEVS_CONTEXT['company_
 ## Our Core Services:
 {chr(10).join([f"- **{service.replace('_', ' ').title()}**: {desc}" for service, desc in STATDEVS_CONTEXT['services'].items()])}
 
-## Proven Results:
-- {STATDEVS_CONTEXT['value_propositions'][0]}
-- {STATDEVS_CONTEXT['value_propositions'][1]}
-- {STATDEVS_CONTEXT['value_propositions'][2]}
-
 ## How to use:
 Simply paste your lead information in this format:
 
@@ -567,7 +562,6 @@ Contact: [Person Name]
 Role: [Job Title]
 Email: [Email Address]
 LinkedIn: [LinkedIn URL]
-Phone: [Phone Number]
 Website: [Website URL]
 ```
 
